@@ -8,9 +8,62 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 # LOAD PACKAGES
+library(ggplot2)
+library(dplyr)
+library(scales)
+library(ggthemes)
+library(qqplotr)
+library(gridExtra)
+library(latex2exp)
 
 # READ DATA
 
+# set up color palettes 
+colors <- ggthemes_data[["tableau"]][["color-palettes"]][["regular"]][[2]][[2]]
+
+distribution_visualizer <- function(
+      data, 
+      title = "Histogram and Density", 
+      x = "Values", 
+      binwidthInput = (max(data)-min(data))/15){
+  binwidthInput <- binwidthInput
+  binCounts <- .bincode(data, seq(0,max(data), binwidthInput))
+  xbar <- round(mean(data),1)
+  sd <- round(sd(data),1)
+  g <- ggplot(data.frame(data), aes(data)) +
+    geom_histogram(fill = colors[1],
+                   color = colors[2],
+                   binwidth = binwidthInput) +
+    geom_vline(aes(xintercept = mean(data)),
+               color = colors[3],
+               linetype = "dashed",
+               size = 0.7) +
+    geom_density(aes(y = binwidthInput * ..count..), 
+                 alpha = 0.2, 
+                 fill = colors[2],
+                 color = colors[1]) +
+    labs(title = title,
+         x = x,
+         y = "Frequency") +
+    annotate("text", 
+             x = mean(data)*1.25, 
+             y = max(binCounts, na.rm = TRUE)*0.75, 
+             label = paste0("Mean = ", xbar),
+             size = 3) +
+    theme_bw()  
+  
+  
+  p <- ggplot(data.frame(data), aes(sample = data)) +
+    stat_qq_band(color = colors[1], fill = colors[2]) +
+    stat_qq_line(color = colors[3], linetype = "dashed", size = 0.7) +
+    stat_qq_point(size = 0.8, alpha = 0.3) +
+    labs(title = "IQ Q-Q Plot",
+         x = "Theoretical Values",
+         y = "Sample Values") +
+    theme_bw()
+  
+  grid.arrange(g, p, ncol = 2)
+}
 ```
 
 ## Problems
@@ -25,9 +78,27 @@ A researcher is interested in measurements of a pollutant in water samples. In p
 &nbsp;  
 
 ```{r question1.1}
-
+waterSamples <- c(-5, -2, -1, -1, 0, 0, 2, 3, 4, 4, 5, 5, 6, 6, 11)
+n <- length(waterSamples)
+xbar <- mean(waterSamples)
+s <- sd(waterSamples)
+se <- m/(s/sqrt(n))
+z <- m/se
+ci <- c(xbar - qnorm(0.975)*se, xbar + qnorm(0.975)*se)
+critical_value <- round(qt(0.975, df = n-1),2)
+p_val <- 2*(1-pnorm(critical_value))
 
 ```
+
+The __null hypothesis__ is that there is no difference in in pollution concentration between aged and fresh samples:
+$$
+H_0: \mu=0
+$$
+The __alternate hypothesis__ is that there is a difference:
+$$
+H_1: \mu\neq 0
+$$
+
 
 &nbsp;  
 
