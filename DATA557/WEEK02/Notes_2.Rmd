@@ -1,0 +1,991 @@
+---
+title: "Session 2 - Hypothesis Testing"
+author: "Brian Leroux"
+date: "Wednesday, January 16, 2019"
+output: beamer_presentation
+fontsize: 10pt
+---
+
+# Outline
+
+1. Hypothesis testing for a population proportion
+
+2. Issues in the interpretation of hypothesis tests
+
+3. Hypothesis testing for a population mean with known variance
+
+4. Hypothesis testing for a population mean with unknown variance
+
+# 1. Hypothesis testing for a population proportion
+
+- Hypothesis Testing vs Confidence Intervals
+
+- 1-Sample Test for a Population Proportion (Binomial Test)
+
+- Null and Alternative Hypotheses
+
+- Type I and Type II Errors
+
+- Rejection Rules
+
+- Power
+
+- Using the Normal Approximation for a Test of a Proportion
+
+# Hypothesis testing versus confidence intervals
+
+Hypothesis tests are used to answer questions about a population (or about differences between 2 or more populations). Whereas a confidence interval gives a range of plausible values for a population parameter, hypothesis tests give a yes/no answer to a question (hypothesis) about the parameter.
+
+__Example__: suppose we want to test whether a coin is fair (equal probability of heads or tails). We could toss the coin a large number of times and record the number of heads. A confidence interval could be used to describe a range of plausible values for the probability of heads. However, if we need to make a decision as to whether or not the coin is fair, a hypothesis test will be more useful.
+
+# Is the coin fair? 
+
+Toss a coin $n=100$ times. Let $X$ be the number of heads. __If the coin is fair__, we expect $X=50$, and the sampling distribution of $X$ is Binomial($n=100, p=0.5$).
+A value in the blue region can be interpreted as evidence that the coin is not fair.
+
+```{r, echo=F,fig.height=2.75,fig.width=3.5, dev.args=list(pointsize=12)}
+par(mar=c(5,4,1,1))
+plot(0:100,dbinom(0:100,size=100,p=0.5),type="h",col=c(rep("blue",40),rep("gray",21),rep("blue",40)),lwd=2,xlab="Number of Heads",ylab="Probability")
+```
+
+# A Decision Rule
+
+A graph of the Binom(100,0.5) distribution (previous slide) suggests that we should expect to get between 40-60 heads most of the time. Therefore, we could make a decision rule as follows.
+
+> If $X < 40$ or $X > 60$, declare that the coin is not fair.
+
+> If $40 \leq X \leq 60$, declare that we ___do not have evidence___ that the coin is unfair.
+
+Note: in the latter case we do __not__ make the claim that the coin is fair, only that we __don't have evidence that it is unfair__. The reason is that the probability of a head might be different than 0.5, but _not enough different to be detected by this experiment_.
+
+This test procedure is called a _1-sample test for a population proportion_, or is sometimes called the _Binomial test for a proportion_.
+
+# Null and Alternative Hypotheses
+
+In hypothesis testing terminology for the coin tossing experiment, we say that the __null hypothesis__ is that the probability ($p$) of a head is 0.5. In mathematical notation this is written as
+$$
+H_0: p=0.5
+$$
+The __alternative hypothesis__ is that the probability is not equal to 0.5, i.e.,
+$$
+H_1: p\neq 0.5
+$$
+
+_Note_: This is an example of a _2-sided alternative hypothesis_ because it  specifies values on both sides of 0.5 (the null hypothesis value). Most hypothesis tests are 2-sided. However, 1-sided hypothesis tests are sometimes more appropriate (we will see examples later).
+
+# To Reject or Not To Reject
+
+To conduct a hypothesis test we need to design a __rejection rule__, which
+tells us whether or not to reject the null hypothesis. Thus there are two possible outcomes of a hypothesis test:
+
+1. Reject the null hypothesis
+2. Do not reject the null hypothesis
+
+If we do not reject the null hypothesis, is it ok to say that we accept it?
+
+No!
+
+It is wrong to say that we accept the null hypothesis when we fail to reject it.
+
+There is a useful analogy with a courtroom trial: the accused is either found "guilty" or "not guilty" but a judge never rules that the accused is  "innocent". 
+
+# Rejection Rule for the Coin Tossing Experiment
+
+Rejection Rule:
+
+If $X < 40$ or $X > 60$, reject the null hypothesis.\footnote{By default, if $40 \geq X \leq 60$ we do not reject the null hypothesis.}
+
+# Type I and Type II Errors
+
+There are two possible true states of nature and two possible decisions so 4 possible situations.
+
+True State of Nature | Reject $H_0$ | Do Not Reject $H_0$ 
+---------|-------------------------|-------------------------
+$H_0$ is True | Type I Error | Correct Decision
+$H_0$ is False | Correct Decision | Type II Error
+
+__Type I Error__: rejecting a null hypothesis when it is true
+
+__Type II Error__: not rejecting a null hypothesis when it is false
+
+# Type I Error Probability
+
+The type I error probability is the probability of rejecting $H_0$ when it is true.
+
+> __Type I Error Probability__ = Probability of rejecting the null hypothesis when it is true
+
+The Type I error probability is also called the _significance level_. It
+is usually denoted by $\alpha$.
+
+In design of experiments, we wish to control the type I error probability. We often design the experiment so that the type I error probability is equal to a small number, with 0.05 being the most common choice based on historical precedent. Other values such as 0.025 or 0.01 are often commonly used.
+
+# R.A. Fisher and the 0.05 Level of Significance
+
+\center
+\includegraphics[width=3in,height=1.5in]{Pictures/Fisher1926.png}
+
+\raggedright
+"When is a Result Significant?"
+
+\center
+\includegraphics[width=4in,height=2in]{Pictures/Fisher05.png}
+
+# Type II Error Probability
+
+The type II error probability is the probability of _not_ rejecting $H_0$ when it is false.
+
+> __Type II Error Probability__ = Probability of not rejecting the null hypothesis when it is false.
+
+The Type II error probability is sometime denoted by $\beta$ and usually
+described in terms of its complementary probability, 
+i.e., the probability of not making a type II error, also called the __power__.
+
+> __Power__ = Probability of rejecting the null hypothesis when it is false.
+
+In experimental design, we first control our type I error at the desired level (e.g., 0.05), and then we try to achieve a high value for the power, e.g., 0.8 or 0.9, or higher, depending on the context. Achieving high power typically requires selecting a sufficiently large sample size.
+
+# Type I Error Probability for the Coin Tossing Experiment
+
+For the coin tossing experiment, the rejection rule is the event $\{X < 40\ \mbox{or}\ X > 60\}$. (The set of values $X < 40$ or $X > 60$ is called the _rejection region_ for $X$.) The type I error probability ($\alpha$) is the probability that $X$ falls in the rejection region, given that $H_0$ is true (i.e., $p=0.5$). This is calculated using the binomial distribution as follows.\footnote{Note on mathematical notation:  P(event\ | condition) here is interpreted as the probability of the event (e.g., $X=0$) under the given condition ($p=0.5$). This is different than a conditional probability in which the condition is a random event rather than a statement about the value of a parameter.}
+\small
+\begin{eqnarray*}
+\alpha&=&\mbox{P(Type I Error|p=0.5)}\\
+&=&\mbox{P}(X < 40\ \mbox{or}\ X > 60|p=0.5)\\
+&=&P(X=0|p=0.5) + P(X=1|p=0.5) + \cdots + P(X=39|p=0.5)\\
+&& + P(X=61|p=0.5) + P(X=62|p=0.5) + \cdots P(X=100|p=0.5)\\
+&=&0.035
+\end{eqnarray*}
+
+# Calculating the Type I Error Probability
+
+\small
+```{r,comment=""}
+n=100
+p0=0.5
+rejection_region = c(0:39,61:100)
+sum(dbinom(rejection_region, size=n, p=p0))
+```
+
+This is considered a sufficiently small significance level.
+Note that in this case we cannot achieve a significance level exactly equal to 0.05. If we try to widen the rejection region to 
+$X < 41\ \mbox{or}\ X > 59$ then the significance level becomes too large (based on the 0.05 convention):\footnote{Note that we added values of 40 and 60 so that the new rejection region is still symmetric around the mean value of 50. This is important because values of equal distance away from 50 represent equivalent evidence against the null hypothesis.}
+
+\small
+```{r, comment=""}
+n=100
+p0=0.5
+rejection_region = c(0:40,60:100)
+sum(dbinom(rejection_region, size=n, p=p0))
+```
+
+# Calculation of Power for the Coin Tossing Experiment
+
+Power is the probability of rejecting the null hypothesis when it is false. The null hypothesis can be false in an infinite number of ways (any value of $p$ different than 0.5 makes the null hypothesis false).
+
+Therefore, power is calculated under a selected hypothetical alternative hypothesis. For example, if $p=0.7$, what would be the power of our test? The power is the probability of rejecting $H_0$ under the assumption that $p=0.7$ rather than 0.5 as used to calculate $\alpha$.
+
+\small
+\begin{eqnarray*}
+\mbox{Power}&=&P(\mbox{Reject}\ H_0|p=0.7)\\
+&=&\mbox{P}(X < 40\ \mbox{or}\ X > 60|p=0.7)\\
+&=&P(X=0|p=0.7) + \cdots + P(X=39|p=0.7)\\
+&& + P(X=61|p=0.7) + \cdots P(X=100|p=0.7)\\
+&=&0.979
+\end{eqnarray*}
+
+```{r, comment=""}
+sum(dbinom(c(0:39,61:100),size=100,p=0.7))
+```
+
+# Experimental Design
+
+When designing an experiment to test an hypothesis, we first insist on a  desirable level for the Type I Error probability, and then we try to achieve a desirably level for the power. This involves selecting an appropriate sample size.
+
+For example, suppose that we wanted to be more conservative with our coin tossing experiment, i.e.,. we want to reject $H_0$ only about 2% of the time when it is true, and to have at least 98% power.
+
+To achieve this, first make the rejection region smaller (to reduce $\alpha$), e.g., $X < 39$ or $X > 61$. Then $\alpha$ becomes
+
+```{r,comment=""}
+sum(dbinom(c(0:38,62:100),size=100,p=0.5))
+```
+
+Thus, we have met our objective of $\alpha$ being approximately 0.02.
+But what is the impact on the power?
+
+# Impact of reducing $\alpha$ on the power
+
+We reduced the chance of a type I error by making the rejection region smaller but this also reduces the power.
+
+\small
+```{r, size="small"}
+sum(dbinom(c(0:38,62:100),size=100,p=0.7))
+```
+
+Now the power has been reduced and is less than the desired 98%.
+This is what typically happens. There is a trade-off between significance level and power.
+
+To achieve our goals for both significance level and power we would have to increase the sample size and make a new rejection region. To facillitate the required calculations, we take advantage of the Central Limit Theorem and the normal approximation to the binomial distribution, which we will consider next.
+
+# Using the Normal Approximation to the Binomial Distribution
+
+By the Central Limit Theorem we know that the binomial distribution can be well approximated by a normal distribution if $n$ is large enough. Therefore, we can approximate the type I error probability using a normal approximation.
+
+Under the null hypothesis, $X$ has a Binomial($n, p$) distribution, which has mean
+$np$ and variance $np(1-p)$. Therefore, if we standardize $X$ by transforming it into a Z-score as follows
+$$
+Z = \frac{X-np}{\sqrt{np(1-p)}},
+$$
+the variable $Z$ will have an approximate standard normal distribution, i.e., N(0,1), with mean 0 and variance 1, __if the null hypothesis is true__.
+
+We can take advantage of this fact to 
+
+1. approximate the type I error probability ($\alpha$) for a given rejection region, or 
+
+2. determine what the rejection region should be for a given value of $\alpha$.
+
+3. determine the sample size required for a given $\alpha$ and power (power calculations to be covered in a later session)
+
+# Using the Normal Approximation to Approximate $\alpha$
+
+Consider the coin tossing experiment with $H_0: p=0.5$ and $n=100$. In that case, $Z$ becomes
+$$
+Z = \frac{X-50}{5}.
+$$
+The rejection region $X < 40$ or $X > 60$ can be written as $X-50 < 10$ or $X-50 > 10$, i.e., $|X-50| > 10$, or $|Z| > 2$. 
+$$
+\mbox{Rejection Region:}\ \{X < 40\ \mbox{or}\ X > 60 \}\ \ = \ \{|Z| > 2 \}.
+$$
+This makes it simply to calculate the type I error probability. Because $Z$ has an approximate normal distribution under $H_0$ the significance level of the test is equal to the two-sided tail probability beyond 2 for the normal distribution:
+
+\small
+```{r, size="small"}
+2*(1-pnorm(2))
+```
+This gives a reasonable approximation to the value of 0.035 calculated using the binomial distribution.
+
+# Using the Normal Approximation to Derive the Rejection Rule
+
+Suppose that a manufacturing process produces a proportion of defective items equal to $p_0=0.04$. After a change in the process is made it is desired to know if the defective proportion has changed. To evaluate this we define the null and alternative hypotheses as $H_0: p=p_0$ and $H_1: p\neq p_0$. If $X$ is the number of defectives in a sample of $n=500$ items, the rejection region can be defined in terms of the Z-score $Z=(X-np_0)/\sqrt{np_0(1-p_0)}=(X-20)/4.38$. We can use the standard normal approximation to $Z$ to define the rejection rule.
+
+If we want $\alpha=0.05$, our rejection rule would be $|Z| > 1.96$. This is equivalent to $X < 20 - 1.96\times 4.38$ or $X > 20 + 1.96\times 4.38$,
+or equivalently, $X < 11.4$ or $X > 28.6$. Because $X$ takes on integer values this is equivalent to $X \leq 11$ or $X \geq 29$. Now we can calculate the exact significance level using the binomial probabilities.
+
+\small
+```{r, comment=""}
+sum(dbinom(c(0:11,29:500),size=500,p=0.04))
+```
+
+This is very close to the theoretical value of 0.05 from the normal distribution.
+
+# 2. Issues in the Interpretation of Hypothesis Tests
+
+- Why it is wrong to accept the null hypothesis
+
+- The confidence interval as complement to the hypothesis test
+
+- The p-value
+
+- The abuse of p-values
+
+# Why it is Wrong to Accept the Null Hypothesis 
+
+The two possible outcomes of an hypothesis test are:
+
+> Reject the null hypothesis, or
+
+> Do not reject the null hypothesis
+
+When $H_0$ is not rejected, the result is sometimes incorrectly interpreted as "we accept the null hypothesis". This is a dangerous interpretation for a few reasons. For one, the null hypothesis specifies a single value for a population parameter (e.g., probability of a defective is equal to 0.04). It is rare that any experiment could be used to specify the value of a population parameter exactly. In experimentation there is always uncertainty.
+
+Because of the inherent uncertaintly in any experiment, it is more appropriate to conclude "we do not reject $H_0$" rather than "we accept $H_0$". It might seem awkward to use a double negative ("not reject"); however, it is an important nuance in the proper interpretation of the results.
+
+Recall the analogy with a courtroom trial: the accused is either found "guilty" or "not guilty" but a judge never rules that the accused is "innocent". 
+
+# Example
+
+In the coin tossing example, suppose that we observed $X=55$ out of $n=100$ heads. This is not exactly equal to the 50 we expected, but it is not enough of a discrepancy to cause us to doubt our null hypothesis that the coin is fair. Note that 55 is not in the rejection region defined as $X < 40$ or $X > 60$. Thus, we would conclude that we don't have any evidence that the coin is unfair.
+
+But have we proved that the coin is in fact a fair coin? No, because the probability of a head could be p=0.55 or some other value close to 0.5. Hence, instead of "accepting"" the null hypothesis and concluding that the coin is fair, we should state only that there is no evidence that it is unfair. 
+
+The confidence interval is a useful complement to the hypothesis test and helps with interpretation of results when we fail to reject the null hypothesis.
+
+# Using the Confidence Interval to Aid with Interpretation
+
+A confidence interval provides additional information beyond the hypothesis test. In the above example, the 95% confidence interval for the probability of a head is (0.45, 0.65). This shows clearly that there is a lot of uncertainty about the true value of the probability. The value 0.5 is a plausible value but so are values quite different from 0.5.
+
+\small
+```{r,comment=""}
+phat=0.55
+n=100
+se=sqrt(phat*(1-phat)/n)
+phat-1.96*se
+phat+1.96*se
+```
+
+# Relationship between confidence intervals and hypothesis tests
+
+In general, we can interpret a confidence interval as the set of all values of the population parameter that would _not_ have been rejected by the corresponding hypothesis test. 
+
+For example, 0.52 is a value in the confidence interval; if we did a test of the null hypothesis $H_0:p=0.52$, we would __not__ reject this $H_0$.
+
+The confidence interval and hypothesis test complement each other. In most applications, it is a good idea to report the results of both.
+
+# The P-Value
+
+The p-value is another additional piece of information that is useful for interpreting the results of an hypothesis test. As described up to now, an hypothesis test results in a dichotomous decision: either reject $H_0$ or do not reject $H_0$.
+
+The $p$-value provides a quantitative assessment of the evidence against the null hypothesis. It is defined as follows:
+
+> The $p$-value is the probability, calculated under the null hypothesis, of the test statistic being as extreme or more extreme than the value that was observed.
+
+# Key Properties of the $p$-Value
+
+1. The $p$-value is a probability statement about the test statistic.
+
+2. "as extreme or more extreme" is interpreted as indicative of as great or greater departures from the null hypothesis.
+
+3. The $p$-value is calculated __under the null hypothesis__
+
+For the coin-tossing experiment: 1) the test statistic is $X$, the number of heads; 2) "as estreme or more extreme" means "as far away or further away from 50"; and 3) the $p$-value is calculated with a probability of a head equal to 0.5.
+
+# Illustration of the $p$-value
+
+The Binomial(n=100,p=0.5) distribution is displayed below, which is the distribution of $X$ under $H_0$. If the observed result is $X=44$, the $p$-value is the probability shaded in red.
+
+```{r, echo=F,fig.height=3,fig.width=4, dev.args=list(pointsize=12)}
+par(mar=c(5,4,1,1))
+plot(0:100,dbinom(0:100,size=100,p=0.5),type="h",col=c(rep("red",43),rep("gray",15),rep("red",43)),lwd=2,xlab="Number of Heads",ylab="Probability")
+```
+
+# Calculation of the $p$-value
+
+For the observed result $X=44$ heads in $n=100$ tosses of a coin, the $p$-value is calculated as follows.
+
+```{r,comment=""}
+sum(dbinom(c(0:44,56:100),size=100,p=0.5))
+```
+
+A $p$-value of 0.27 means that there is about a 27% chance of getting a result as or more extreme than 44 heads in 100 tosses, if the coin is fair. This probability is not small enough to cause us to question the null hypothesis. Note that this agrees with our original decision rule, which was to reject the null hypothesis only if $X < 40$ or $X > 60$.
+
+# Relationship between the $p$-value and the significance level
+
+In the example we saw that we get the same interpretation whether we use the $p$-value or the rejection region to make our decision about whether or not to reject the null hypothesis. Recall that our rejection region ($X < 40$ or $X > 60$) had probability 0.035 under the null hypothesis. We called this number the significance level of the test and use the notation $\alpha$ for it.
+
+Any value of $X$ not in the rejection region (e.g., $X=44$) will __by definition__ have a $p$-value larger than 0.035, andn any value of $X$ in the rejection region will have a $p$-value smaller than 0.035. This is a general rule:
+
+> $p < \alpha$ if and only if $X$ lies in the rejection region with significance level $\alpha$.
+
+# What the $p$-value is not
+
+The $p$-value is sometimes interpreted as "the probability that the null hypothesis is true." This is wrong! For one thing, we are treating the null hypothesis as a state of nature, which is either true or false, but we are not associating probabilities with it. The random quantity is not the hypothesis but the test statistic.
+
+The $p$-value is a probability about the test statistic, calculated __under the assumption that the null hypothesis is true__. It is a "what if" calculation, i.e., "what if the null hypothesis is true, is our observed result unlikely or not?". 
+
+# Abuse of p-values
+
+In many fields of scientific research, there is a problem with overuse of p-values (and hypothesis testing in general)
+
+One aspect of this problem is called the multiple-testing problem: if a large number of hypothesis tests are performed, then the null hypothesis will be rejected in some cases just by chance (approximately 5% of them if $\alpha=0.05$). 
+
+There are specialized methods to mitigate the multiple-testing problem,
+but no completely satisfying solution.
+
+The abuse of p-values is one factor that has contributed to a crisis in reproducibility in scientific research.
+
+# A crisis of reproducibility in scientific research?
+
+\small
+Ioannidis, JPA: 
+Why most published research findings are false.
+PLOS MEDICINE 2(8):696-701, 2005.
+
+``There is increasing concern that most current published research findings are false.''
+
+``... a research finding is less likely to be true when the studies conducted in a field are smaller; when effect sizes are smaller; when there is a greater number and lesser preselection of tested relationships; where there is greater flexibility in designs, definitions, outcomes and analytical modes; when there is greater financial and other interest and prejudices and when more teams are involved in a scientific field in chase of statistical significance.''
+
+``Simulations show that for most study designs and settings it is more likely for a research claim to be false than true.''
+
+
+# 3. Hypothesis Testing for a Population Mean
+
+- 1-Sample Test for a Population Mean with Known Variance
+
+- Using the CLT
+
+- Simulation studies of the performance of the test
+
+# 1-Sample Test for a Population Mean with Known Variance
+
+Example: suppose that we want to test whether or not there is an effect of a psychiatric medication on weight. We define the null hypothesis as $H_0:\mu=0$, where $\mu$ is the population mean weight loss in pounds, i.e., the mean weight loss in a hypothetical (infinite) population of patients who might take this drug in the future. Because we don't know if the drug can cause weight gain or weight loss, we set the alternative hypothesis to be $H_1: \mu \neq 0$ (i.e., $H_1$ means that $\mu < 0$ or $\mu > 0$).
+
+Our experiment will consist of measuring weights in pounds of a sample of $n$ patients before they start taking the drug and then again a fixed time (e.g., 3 months) after starting the drug. The variable used to conduct the test is the change in weight ($X = \mbox{weight at 3 months} - \mbox{pre-treatment weight}$). Then $\mu$ is the expected value of $X$, and $H_0$ says that the mean weight change is 0. 
+
+# The Assumption of Known Variance 
+
+The variable $X$ will have a certain variance ($\sigma^2$). 
+Assume for now that we know the value of the variance, say $\sigma^2=25$. For example,
+this might be a reasonable assumption if we have done many
+similar experiments in the past and the variance in weight change
+has been consistent. (It is more common in practice 
+to use the sample variance as an estimate of
+$\sigma^2$, which has an impact on the test procedure as we will see later.)
+
+# Deriving the Rejection Rule for the Weight Loss Experiment
+
+Because we are interested in determining if the population mean weight change is equal to 0 or not, a natural decision rule is to reject $H_0$ if the sample mean $\bar X$ is larger than we might expect. How do we calculate how large a value of $\bar X$ to expect? Use the CLT!
+
+Under $H_0$, if $n$ is large enough, $\bar X$ will have a normal distribution with mean equal to 0 (because $\mu=0$ under $H_0$) and standard deviation equal to the SE, i.e., $\sigma/\sqrt{n}$, where $\sigma$ is the population standard deviation of weight change.
+
+Therefore, by the well-known property of the normal distribution, $\bar X$ will lie within $\pm 1.96\times SE(\bar X)$ with probability 0.95:
+$$
+P(-1.96\times \sigma/\sqrt{n} < \bar X < 1.96\times \sigma/\sqrt{n} ) \approx 0.95
+$$
+
+# Rejection Rule for the Weight Loss Experiment
+
+Restating the above property, we have that
+$\mbox{P}(
+\bar X < -1.96\times\sigma/\sqrt{n}\ \ \mbox{or}\ \ \bar X > 1.96\times\sigma/\sqrt{n}
+) \approx 0.05$.
+
+Therefore, we will have type I error probability (significance level) $\alpha= 0.05$ for the following rejection rule:
+$$
+\mbox{Reject}\ H_0:\mu=0\ \ \mbox{if}\ \bar X < -1.96\times\sigma/\sqrt{n}\ \ \mbox{or}\ \ \bar X > 1.96\times\sigma/\sqrt{n}
+$$
+Equivalently,
+$$
+\mbox{Reject}\ H_0:\mu=0\ \ \mbox{if}\ \ |\bar X| > 1.96\times\sigma/\sqrt{n}
+$$
+
+For example, with $\sigma^2=25$ and a sample size of 100, so that $1.96\sigma/\sqrt{n}\approx 1$, the rejection region would become $\bar X < 1$ or $\bar X > 1$, i.e., $|\bar X| > 1$. 
+We call the value 1 the "critical value" for the test statistic.
+
+# Example
+
+Suppose that with a sample size of $n=100$ we get the following observations of weight change (recorded to the nearest pound):
+
+\small
+```{r,echo=F,comment=""}
+set.seed(1)
+options(width=84)
+n=100
+x=round(runif(n,-10,10),0)
+x
+```
+
+\normalsize
+Then $\bar x=$ `r mean(x)` and so we would not reject the null hypothesis.
+
+# Illustration of the Data
+
+Remember - always look at the data! Does the distribution accurately reflect the conclusion of the test? Are there any outliers that might have undue influence on the results?
+
+```{r, echo=F, fig.height=4, fig.width=5}
+hist(x,main="",xlab="Weight (lb)")
+```
+
+# Simulation Study of Type I Error
+
+How do we know if our test really has the significance level, (in this example $\alpha=0.05$)?
+
+If the sample size is large enough (and our assumed variance is correct), we can be confident because of the CLT. But what if we have $n=20$? Do a simulation study to check it out.
+
+Because i don't know what the distribution of weight change is i will try a few different types of distribution to see what i get. Here are two examples;
+
+1. A uniform distribution on the interval (-10, 10) with values rounded to the nearest pound.
+
+2. A distribution that takes on only two values: $-5$ with probability 1/2 and 5 with probability 1/2.
+
+Note: both of these distributions have $\sigma=5$ as we are assuming.
+
+
+# Simulation under the Uniform Distribution with $n=100$
+
+\small
+```{r, comment=""}
+set.seed(123456)
+n=100
+critical.value=1
+reps=200
+xbar=rep(NA,reps)
+for(i in 1:reps) xbar[i]=mean(round(runif(n,-10,10),0))
+summary(xbar)
+mean(abs(xbar)>critical.value)
+```
+
+This is what we would expect (a value close to 0.05).
+
+# Simulation under the Uniform Distribution with $n=20$
+
+For $n=20$ the critical value is $1.96\times 5/\sqrt{20}=2.2$ so the rejection region is $|X| > 2.2$.
+
+\small
+```{r, comment=""}
+set.seed(123456)
+n=20
+critical.value=2.2
+reps=200
+xbar=rep(NA,reps)
+for(i in 1:reps) xbar[i]=mean(round(runif(n,-10,10),0))
+summary(xbar)
+mean(abs(xbar)>critical.value)
+```
+
+This is not quite as close to 0.05 because the sample size is not large enough to give a very good approximation for the assumed distribution.
+
+# Simulation under the Dichotomous Distribution with $n=100$
+
+\small
+```{r, comment=""}
+set.seed(123456)
+n=100
+critical.value=1
+reps=200
+xbar=rep(NA,reps)
+for(i in 1:reps) xbar[i]=mean(sample(c(-5,5),size=n,replace=T))
+summary(xbar)
+mean(abs(xbar)>critical.value)
+```
+
+Again, a good match to theory, because of the large sample size.
+
+# Simulation under the Dichotomous Distribution with $n=20$
+
+\small
+```{r, comment=""}
+set.seed(123456)
+n=20
+critical.value=2.2
+reps=200
+xbar=rep(NA,reps)
+for(i in 1:reps) xbar[i]=mean(sample(c(-5,5),size=n,replace=T))
+summary(xbar)
+mean(abs(xbar)>critical.value)
+```
+
+This time the type I error probability is too low. As before, the problem is that
+the sample size is too small for the assumed distribution. This can make the type I error probability either too large or too small.
+
+# Calculation of Power
+
+In a later class we will discuss how to do power calculations. For now, we will use simulation to estimate power. Consider the weight loss experiment. As with simulations of the type I error probability we need to consider various options for the alternative hypothesis. For example, suppose we want to know the power of our experiment to detect an average weight gain of 1 pound. We could do this by simulating from a uniform distribution on the interval (-9, 11).
+
+\small
+```{r, comment=""}
+set.seed(123456)
+n=100
+critical.value=1
+reps=200
+xbar=rep(NA,reps)
+for(i in 1:reps) xbar[i]=mean(runif(n,-9,11))
+summary(xbar)
+mean(abs(xbar)>critical.value)
+```
+
+---
+
+The power is only 49% which would not be considered adequate. By convention, at least 80% power is considered acceptable in most applications; however, higher values such as 90% or even higher are required in some experimental settings.
+
+To achieve a desired level of power we typically need to increase the sample size. This can be done using simulation studies as above. However, there are some approximate formulas that are typically used as short cuts. We will consider these when we cover the topic of power calculations in a later class.
+
+# Summary: 1-Sample Test for a Population Mean with Known Variance
+
+Based on a random sample of size $n$ we wish to test the hypothesis that the mean is equal to 0 against the alternative hypothesis that the mean is not 0, i.e.,
+$$
+H_0:\mu=0\ \ \mbox{versus}\ \ \ H_1:\mu\neq 0.
+$$
+Assuming that the population variance is known to be equal to $\sigma$, we use the following rejection rule:
+$$
+\mbox{Reject}\ H_0\ \mbox{if}\ |Z| = \frac{|\bar X|}{\sigma/\sqrt{n}} > 1.96.
+$$
+
+This test is valid __if the sample size is sufficiently large__.
+
+The large sample size ensures that the sampling distribution of $\bar X$ (and hence of $Z$) will be approximately normal, regardless of the distribution of the variable in the population.
+
+# 4. Hypothesis Testing for a Population Mean with Unknown Variance
+
+- Using the sample variance when the population variance is unknown
+
+- The T-Test
+
+# Using the sample variance when the population variance is unknown
+
+In practice, we typically do not know $\sigma$, so we substitute the sample standard deviation in place of $\sigma$ to define the test statistic as follows:
+$$
+Z = \frac{|\bar X|}{s/\sqrt{n}}
+$$
+Note: the test statistic is sometimes denoted by $T$ rather than $Z$ to indicate that we are using the sample SD in place of the population SD. However, we will continue to use $Z$ for now.
+
+The rejection rule is
+$$
+\mbox{Reject}\ H_0:\mu=0\ \ \mbox{if}\ \ Z = \frac{|\bar X|}{s/\sqrt{n}} > C,
+$$
+where $C$ is called the _critical value_ for the test.
+
+# Choosing the critical value
+
+How do we choose $C$? There are 2 cases to consider:
+
+1. If $n$ is quite large we can continue to use the value from the normal distribution (1.96 for a significance level of 0.05). This is because the large sample not only makes the sampling distribution of $\bar X$ approximately normal, but it also ensures that the sample SD will be a good approximation to the population SD (so we can ignore the fact that we use $s$ in place of $\sigma$).
+
+2. If $n$ is not that large, the use of $s$ in place of $\sigma$ introduces additional variability into the test statistic; in this case, we cannot use the values from the normal distribution.
+
+# Example
+
+Consider the data set of simulated weight changes. The
+mean, standard deviation, and test statistic are as follows:
+\small
+```{r,comment=""}
+m=mean(x)
+m
+s=sd(x)
+s
+z=m/(s/sqrt(n))
+z
+```
+Note that the SD is quite close to the value 5 that we had assumed previously.
+Assuming that we are in case (1), i.e., that $n$ is large enough, then we would not reject the null hypothesis because $|Z|$ is not larger than 1.96. The same conclusion was reached previously when we had assumed $\sigma=5$.
+
+# The Distribution of $Z$ Under the Null Hypothesis with Large $n$
+
+With large $n$, the distribution of $Z$ is approximately equal to the standard normal distribution.
+The tail probability beyond $\pm 1.96$ is equal to 0.05.
+
+```{r,echo=F,fig.height=5,fig.width=6,dev.args=list(pointsize=12)}
+z=((-1000):1000)/400
+plot(z,dnorm(z),type="l",lty=1,lwd=2,col=4,ylab="",main="")
+mtext("Theoretical Distribution of Z",side=3,line=1)
+abline(v=-1.96,lty=3,lwd=2,col=2)
+abline(v=1.96,lty=3,lwd=2,col=2)
+```
+
+---
+
+```{r,echo=F,fig.height=5,fig.width=6,dev.args=list(pointsize=12)}
+set.seed(1)
+n=1000
+reps=2000
+m=rep(NA,reps)
+s=rep(NA,reps)
+for(i in 1:reps){
+  x=runif(n,-1,1)
+  m[i]=mean(x)
+  s[i]=sd(x)
+}
+z=m/(s/sqrt(n))
+hist(z,main="Simulated Distribution of Z with Large n")
+```
+
+# What happens if the sample size is not large enough?
+
+1. If the population distribution is not normal and $n$ is not large enough for  the Central Limit Theorem to take effect, then the sampling distribution of the sample mean (and hence that of $Z$) will not be approximately normal.
+
+2. If the population distribution is not normal, then $n$ might be large enough for  the Central Limit Theorem to take effect, _but_ not large enough for $s$ to be a good approximation of $\sigma$.
+
+3. _Even if the population distribution is normal_, if $n$ is not large enough, the distribution of $Z$ might not be normal because $s$ is not close enough to $\sigma$.
+
+Thus, the requirement on the sample size is a little more stringent than before.
+
+# Sampling from a Normal Population with $n=5$
+
+The distribution of the __sample mean__ $\bar X$ is approximately normal.
+
+```{r, echo=F, comment="",fig.height=6,fig.width=8}
+set.seed(1)
+n=5
+reps=200
+m=rep(NA,reps)
+s=rep(NA,reps)
+for(i in 1:reps){
+  x=rnorm(n,mean=0,sd=1)
+  m[i]=mean(x)
+  s[i]=sd(x)
+}
+z=m/(s/sqrt(n))
+par(mfrow=c(1,2),mar=c(5,4,2,1))
+hist(m,main="Histogram of Sample Mean")
+qqnorm(m,main="Normal Q-Q Plot of Sample Mean")
+qqline(m)
+```
+
+---
+
+$\cdots\cdots$ __but__ the distribution of $Z$ is __not__ approximately normal:
+
+```{r, echo=F, comment="",fig.height=6,fig.width=8}
+par(mfrow=c(1,2),mar=c(5,4,2,1))
+hist(z,main="Histogram of Z")
+qqnorm(z,main="Normal Q-Q Plot of Z")
+qqline(z)
+```
+
+# The Problem: $s$ is not a good estimate of $\sigma$ with $n=5$
+
+The true value is $\sigma=1$. There is too much variability in $s$.
+
+```{r,echo=F,fig.height=5,fig.width=6,dev.args=list(pointsize=12)}
+hist(s,main="Sampling Distribution of s, with n=5")
+```
+
+# The T-Test
+
+
+With small $n$, we take advantage of result from probability theory:
+
+For _sampling from a normal population_, under the null hypothesis $H_0:\mu=0$,
+the sampling distribution of the test statistic $Z$ is a t-distribution with $n-1$ degrees of freedom, which is denoted $t_{n-1}$.
+
+Therefore, in this case, we should use a critical value chosen based on the $t_{n-1}$ distribution instead of the value from the normal distribution. For a test with significance level 0.05, for large $n$ we would use the critical value 1.96. But for small $n$ we would use a
+corresponding value based on the $t_{n-1}$ distribution.
+
+For small $n$ (i.e., less than about 20), there can be an important difference between the normal value and the $t$ value.
+But if $n$ is large, the $t_{n-1}$ distribution is almost identical to the standard normal distribution.
+
+# t-distributions have heavier tails than the normal
+
+```{r,echo=F,fig.height=5,fig.width=6,dev.args=list(pointsize=10)}
+z=((-1000):1000)/400
+plot(z,dnorm(z),type="n",lty=1,lwd=1,col="gray",ylab="")
+lines(z,dt(z,df=1),lty=1,lwd=1,col=1)
+lines(z,dt(z,df=2),lty=2,lwd=1,col=2)
+lines(z,dt(z,df=4),lty=3,lwd=1,col=3)
+lines(z,dt(z,df=9),lty=4,lwd=1,col=4)
+lines(z,dt(z,df=15),lty=5,lwd=1,col=5)
+lines(z,dt(z,df=30),lty=6,lwd=1,col=6)
+mtext("Some t distributions",side=3,line=1)
+legend("bottom",paste("df=",c(1,2,4,9,15,30),sep=""),lty=1:6,col=1:6,cex=0.75)
+```
+
+# Critical Values for the t-test ($\alpha=0.05$)
+
+```{r,comment=""}
+n=c(2:5,10,20,30,50,100,200)
+data.frame(n,df=n-1,t.critical.value=round(qt(.975,df=n-1),2))
+```
+
+As $n \rightarrow \infty$ the critical value approaches the normal distribution value of 1.96. In practice, the distinction between the normal and t values can be ignored for $n$ of approximately 50 or greater.
+
+# Critical Values for the t-test for other significance levels
+
+For significance level $\alpha=0.05$ the t critical value is
+denoted $t_{n-1,0.05}$ ("t.05" in table below).
+For smaller $\alpha$ values the t-distribution approaches the normal
+a little more slowly (requires larger $n$ to use the normal value).
+
+```{r,echo=F,comment=""}
+n=c(10,20,30,50,100,200)
+data.frame(n,df=n-1,
+t.05=round(qt(.975,df=n-1),2),
+t.01=round(qt(.995,df=n-1),2),
+t.001=round(qt(.9995,df=n-1),2)
+)
+```
+
+The normal critical values are 1.96, 2.58, and 3.29, for $\alpha=0.05, 0.01, 0.001$, respectively.
+
+# Simulation under the Uniform Distribution with $n=100$
+
+\small
+```{r, comment=""}
+set.seed(123456)
+n=100
+reps=200
+z=rep(NA,reps)
+for(i in 1:reps){
+  x=round(runif(n,-10,10),0)
+  z[i]=mean(x)/(sd(x)/sqrt(n))
+}
+summary(z)
+critical.value = 1.96
+mean(abs(z)>critical.value)
+```
+
+Good match to theory.
+
+# Simulation under the Uniform Distribution with $n=20$
+
+\small
+```{r, comment=""}
+set.seed(123456)
+n=20
+reps=200
+z=rep(NA,reps)
+for(i in 1:reps){
+  x=round(runif(n,-10,10),0)
+  z[i]=mean(x)/(sd(x)/sqrt(n))
+}
+summary(z)
+critical.value = 1.96
+mean(abs(z)>critical.value)
+```
+
+A little off, but not too bad!
+
+# Simulation under the Dichotomous Distribution with $n=20$
+
+\small
+```{r, comment=""}
+set.seed(123456)
+n=20
+reps=200
+z=rep(NA,reps)
+for(i in 1:reps){
+  x=sample(c(-5,5),size=n,replace=T)
+  z[i]=mean(x)/(sd(x)/sqrt(n))
+}
+summary(z)
+critical.value = 1.96
+mean(abs(z)>critical.value)
+```
+
+As before, the test does not perform so well under this distributional assumption with $n=20$.
+
+
+# Simulation under a Normal Distribution with $n=20$
+
+\small
+```{r, comment=""}
+set.seed(123456)
+n=20
+reps=200
+z=rep(NA,reps)
+for(i in 1:reps){
+  x=rnorm(n,mean=0,sd=5)
+  z[i]=mean(x)/(sd(x)/sqrt(n))
+}
+summary(z)
+critical.value = 1.96
+mean(abs(z)>critical.value)
+```
+
+This is surprising! Since the population distribution is normal the sampling distribution of $\bar X$ has to be normal. So why does $Z$ not have a normal distribution?
+
+---
+
+The problem is with the substitution of $s$ for $\sigma$. With a sample size of only 20, $s$ is not a very good estimator of $\sigma$. The extra variability introduced by using $s$ in place of $\sigma$ leads to a type I error probability that is too high. Using a critical value from the t-distribution solves this problem.
+
+# The P-Value for a 1-sample test for a mean
+
+The $p$-value is defined in the same way and calculated in a similar way as for the test for a proportion. The $p$-value is the probability of getting a result as or more extreme than the one observed.
+
+For the data set of simulated weight changes, we have a test statistic of $Z=0.73$ (to 2 decimal places). Thus, the $p$-value is the 2-sided tail probability for the standard normal distribution.
+
+```{r,comment=""}
+2*(1-pnorm(0.73))
+```
+
+The interpretation is that we would have about a 47% chance of getting a result as or more extreme than this (meaning indicating as or greater departures from a mean of 0), if the null hypothesis is true. 
+
+# Testing a Non-Zero Value for a Population Mean
+
+Sometimes we are interested in a non-zero value as the null hypothesis value. If the hypothesize value of $\mu$ is $\mu_0$, the hypotheses become
+
+$$
+H_0:\mu=\mu_0\ \ \mbox{versus}\ \ \ H_1:\mu\neq \mu_0.
+$$
+The rejection rule becomes
+$$
+\mbox{Reject}\ H_0\ \mbox{if}\ |Z| = \frac{|\bar X - \mu_0|}{s/\sqrt{n}} > 1.96.
+$$
+
+So, the only difference is that we subtract $\mu_0$ from $\bar X$ in the test statistic.
+
+Example: Was the Morley experiment biased?
+
+Let $\mu$ be the population mean of the Morley measurements of the speed of light (with 299,000 subtracted). If the experiment is unbiased then $\mu$ should exactly equal the true value, i.e., $\mu=792$. Therefore our null hypothesis value for the mean is $\mu_0=792$ and we wish to test $H_0:\mu=792$ versus $H_1: \mu\neq 792$.
+
+# Example: Was the Morley Experiment Biased?
+
+We know the true value is 792 ($299,792 - 299,000$).
+
+```{r,fig.height=4,fig.width=5.5}
+Speed = morley$Speed[morley$Expt==1]
+hist(Speed,main="")
+abline(v=792,lty=3,col=4,lwd=2)
+```
+
+# Testing the Null Hypothesis
+
+We wish to test $H_0:\mu=792$ versus $H_1: \mu\neq 792$,
+where $\mu$ is the population mean of the Morley measurements
+(i.e., the value we would get if we averaged an infinite number of measurements).
+
+```{r}
+n=length(Speed)
+z=(mean(Speed)-792)/(sd(Speed)/sqrt(n))
+z
+```
+
+This is much larger than the critical value of the $t_{19}$ distribution:
+```{r}
+qt(0.975,df=n-1)
+```
+
+Thus, we would reject the null hypothesis that $\mu=792$ at significance level 0.05, and conclude that we have evidence that the Morley Experiment 1 was biased.
+The p-value for the test is < 0.001.
+
+```{r,comment=""}
+2*(1-pt(z,df=n-1))
+```
+
+# Summary: 1-Sample T-Test for a Population Mean with Unknown Variance
+
+Based on a random sample of size $n$ we wish to test the hypothesis that the mean is equal to 0 against the alternative hypothesis that the mean is not 0, i.e.,
+$$
+H_0:\mu=0\ \ \mbox{versus}\ \ \ H_1:\mu\neq 0.
+$$
+Assuming that the population variance is not known we use the following rejection rule:
+$$
+\mbox{Reject}\ H_0\ \mbox{if}\ |Z| = \frac{|\bar X|}{s/\sqrt{n}} > C,
+$$
+where the critical value $C$ is chosen based on the $t_{n-1}$ distribution.
+This test is valid if __either of the following holds__:
+
+1. The population distribution is normal.
+
+2. sample size is sufficiently large.
+
+# Summary of Hypothesis Testing Terminology
+
+Null Hypothesis ($H_0$): an hypothesis about the true state of nature.
+
+Alternative Hypothesis ($H_1$): a set of alternatives to the null hypothesis
+
+Rejection Rule: a rule for deciding to reject $H_0$ based on the observed value of a random variable $X$, written as $X\in R$ where $R$ is the rejection region for $X$
+
+Type I Error probability ($\alpha$): the probability of rejecting $H_0$ when it is true, i.e., $P(X \in \mbox{R} | H_0)$, also called the significance level
+
+Power: the probability of rejecting $H_0$ when it is false, i.e., $P(X \in \mbox{R} | H_1)$. This requires specifying a _specific_ alternative $H_1$.
+
+Type II Error probability ($\beta$): the probability of _not_ rejecting $H_0$ when it is false, i.e., $\beta = 1-\ \mbox{Power}$
+
+P-Value: the observed level of significance, i.e., the probability of the test statistic being as extreme or more extreme than the observed value, under the assumption that $H_0$ is true.
+
+# Summary of Interpretational Issues in Hypothesis Testing
+
+1. Confidence intervals and hypothesis tests complement each other. We can think of the confidence interval as containing all the values that would _not_ have been rejected by a corresponding hypothesis test. This relationship is exact in some situations but only approximate in other situations.
+
+2. The $p$-value complements the decision rule of the hypothesis test. It quantifies the evidence in the data against the null hypothesis. A test rejects $H_0$ when the $p$-value is less than $\alpha$.
+
+3. $p$-values and hypothesis tests can be abused. In particular, if we perform too many hypothesis tests we are likely to get many type I errors.
+
+4. We should never "accept" the null hypothesis -- we can only "not reject". 
+
+
+# Summary of 1-Sample Tests for a Population Mean
+
+We have a random sample from a population with mean $\mu$ and unknown* variance $\sigma^2$. We want to test $H_0:\mu=\mu_0$ versus $H_1:\mu\neq\mu0$.
+
+1. Calculate the test statistic: $Z=(\bar X - \mu_0)/(s/\sqrt{n})$
+
+2. Calculate the critical value for the desired significance level ($\alpha$).
+
+If $n$ is large, use the standard normal distribution, (e.g., 1.96) for $\alpha=0.05$.
+
+If $n$ is small _and the population distribution is normal_, then use the $t_{n-1}$ distribution.
+
+If $n$ is small and _we are not sure if the population distribution is normal_ then we are stuck for now! (see Exact methods later in course)
+
+*Note: If the variance is known then the only difference is that we
+calculate the test statistic as $Z=(\bar X - \mu_0)/(\sigma/\sqrt{n})$

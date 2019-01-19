@@ -1,0 +1,65 @@
+---
+title: "Data 556: Discrete Random Variables: Problem 5"
+author: "Will Wright"
+date: "10/9/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Problem 5
+
+A copy machine is used to make n pages of copies per day. The machine has two trays in which paper gets
+loaded, and each page is taken randomly and independently from one of the other trays. At the beginning
+of the day, the trays are refilled so that they each have m pages. Using simulations in R, find the smallest
+value of m for which there is at least a 95% chance that both trays have enough paper on a particular day,
+for n = 10, n = 100, n = 1000, and n = 10000.
+
+
+```{r simulations}
+# set seed for reproducibility
+set.seed(4472)
+
+# function which runs simulations (default is 10,000) based on the above problem with user input for n
+paperFeeder <- function(n, simulationCount = 10000) {
+  # create empty vectors to hold the counts of paper used per simulation
+  paperUsed1 <- c()
+  paperUsed2 <- c()
+  
+  # loop to run simulations
+  for(i in 1:simulationCount) {
+    # set the count of paper used by each tray to 0 to start each ith simulation
+    tray1 <- 0
+    tray2 <- 0
+    
+    # loop to pull paper randomly for either tray
+    for(j in 1:n) {
+      selectedTray <- sample(1:2, 1) # choose to randomly pull 1 sheet from either tray 1 or tray 2
+      ifelse(selectedTray == 1, tray1 <- tray1 + 1, tray2 <- tray2 + 1) # add the pulled sheet
+    }
+    # append the simulated paper counts
+    paperUsed1 <- c(paperUsed1, tray1)
+    paperUsed2 <- c(paperUsed2, tray2)
+  }
+  # calculate 95th quantiles for each tray
+  quantile1 <- quantile(paperUsed1, 0.95)
+  quantile2 <- quantile(paperUsed2, 0.95)
+  #select the max of those to ensure both have paper
+  print(max(quantile1,quantile2))
+}
+
+# n = 10
+paperFeeder(10)
+
+# n = 100
+paperFeeder(100)
+
+# n = 1000
+paperFeeder(1000)
+
+# n = 10000
+paperFeeder(10000, 1000) # reduced simulations for time
+
+```

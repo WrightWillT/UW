@@ -1,0 +1,62 @@
+---
+title: "DATA 556: Homework 4"
+author: "Will Wright"
+date: "October 25, 2018"
+output: pdf_document
+---
+
+```{r setup}
+# load packages
+library(ggplot2)
+set.seed(0) # set seed for reproducibility
+```
+
+## Problem 2a
+
+A circle with a random radium R ~ Unif(0,1) is generated. Let A be its area.
+a.) Use simulations in R (the statistical programming language) to numerically estimate the mean and variance of A.
+
+
+```{r 2a}
+circleArea <- pi*runif(10000)^2 # simulate 10,000 circle areas
+mean(circleArea)
+var(circleArea)
+
+```
+
+## Problem 3a
+
+A stick of length 1 is broken at a uniformly random point, yielding two pieces.  Let X and Y be the lengths of the shorter and longer pieces, respectively, and let R = X/Y be the ratio of the lengths X and Y.
+a.) Use simulations in R (the statistical programming language) to gain some understanding about the distribution of the random variable R.  Numerically estimate the expected value of R and 1/R.
+
+```{r 3a}
+stickBreakPoints <- runif(10000) # simulate 10,000 stick breaks
+# create empty dataframe to hold the X and Y lengths
+xyLengths <- setNames(data.frame(matrix(nrow = length(stickBreakPoints), ncol = 2)), c("X","Y"))
+
+# loop to assign X and Y for each breakpoint, based on which is longer
+for(i in 1:length(stickBreakPoints)){
+  ifelse(stickBreakPoints[i]>=0.5,
+         xyLengths$Y[i] <- stickBreakPoints[i],
+         xyLengths$X[i] <- stickBreakPoints[i])
+}
+
+# update the NAs with 1-(the other value)
+xyLengths$X[which(is.na(xyLengths$X))] <- 1-xyLengths$Y[which(is.na(xyLengths$X))]
+xyLengths$Y[which(is.na(xyLengths$Y))] <- 1-xyLengths$X[which(is.na(xyLengths$Y))]
+
+# Calculate R and 1/R
+R <- xyLengths$X/xyLengths$Y
+Rreciprocal <- 1/R
+
+par(mfrow = c(2,2))
+hist(R)
+# plot without the outliers to better see the distribution
+hist(Rreciprocal[-which(Rreciprocal %in% boxplot.stats(Rreciprocal)$out)])
+boxplot(R)
+boxplot(Rreciprocal)
+
+# calculate E(R) and E(1/R) via their means and show summary stats
+summary(R)
+summary(Rreciprocal)
+```
