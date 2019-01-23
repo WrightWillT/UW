@@ -118,9 +118,12 @@ Because $C =$ `r critical_value` $> T =$ `r t`, we reject the null hypothesis. W
 Given the shape of the sample data's distribution, we'll use a uniform from -3 to 7.
 
 ```{r question1.2}
-
 set.seed(4432)
-n=100
+# see what a high-n single sample looks like
+uniformData <- runif(10000,-3,7)
+distribution_visualizer(uniformData)
+
+n=1000
 reps=200
 z=rep(NA,reps)
 for(i in 1:reps){
@@ -130,11 +133,12 @@ for(i in 1:reps){
 }
 
 summary(z)
+unif_xbar <- mean(z)
 critical_value = qnorm(0.975)
 a <- mean(abs(z)>critical_value)
 a
 ```
-The type I error rate is $\alpha=$ `r round(a,2)`, which approximately meets the expectation of 0.05 and seems valid. Question 2.4 resulted in a mean of 0.49 and $\alpha=$  of 0.05 using a poisson distribution, which is very similar to the results in this question. Any differences would be the result of the differences in the shape of the uniform to the poisson distribution, the sample variances, the sample sizes, number of repetitions, and the random nature of draws.
+The type I error rate is $\alpha=$ `r round(a,2)`, which approximately meets the expectation of 0.05 and seems valid. Question 2.4 resulted in a mean of 0.49 and $\alpha=$  of 0.05 using a poisson distribution, which is very similar to the `r round(unif_xbar,2)` we achieved. Any differences would be the result of the differences in the shape of the uniform to the poisson distribution, the sample variances, the sample sizes, number of repetitions, and the random nature of draws.
 
 &nbsp;  
 
@@ -142,26 +146,46 @@ The type I error rate is $\alpha=$ `r round(a,2)`, which approximately meets the
 
 &nbsp;  
 
-For this question, let's assume a bimodal multivariate normal distribution with 2 modes centered at -3 and 7:
+For this question, let's assume a bimodal bivariate normal distribution with 2 modes centered at -3 and 7:
 ```{r question1.3}
-n=100
+set.seed(4432)
+mu1 <- -3   
+mu2 <- 7
+sig1 <- sqrt(15)
+sig2 <- sqrt(15)
+cpct <- 0.5 
+
+bimodalDistFunc <- function (n,cpct, mu1, mu2, sig1, sig2) {
+  y0 <- rnorm(n,mean=mu1, sd = sig1)
+  y1 <- rnorm(n,mean=mu2, sd = sig2)
+
+  flag <- rbinom(n,size=1,prob=cpct)
+  y <- y0*(1 - flag) + y1*flag 
+}
+
+bimodalData <- bimodalDistFunc(n=10000,cpct,mu1,mu2, sig1,sig2)
+# see what a high-n single sample looks like
+distribution_visualizer(bimodalData)
+
+# perform simulation
+n=1000
 reps=200
 z=rep(NA,reps)
-mode1 <- -2
-mode2 <- 7
 for(i in 1:reps){
-  x=rmvnorm(n, mean = c(mode1,mode2))
+  x <- bimodalDistFunc(n, cpct, mu1, mu2, sig1, sig2)
   # shifting down 2 since we're assuming the mean is closer to 2, like the sample data
   z[i]=(mean(x)-2)/(sd(x)/sqrt(n)) 
 }
 
 summary(z)
+bimodal_xbar<-mean(z)
 critical_value = qnorm(0.975)
 a <- mean(abs(z)>critical_value)
 a
 
 
 ```
+In this case, we're seeing a mean of `r round(bimodal_xbar,2)` instead of `r round(unif_xbar,2)`, but they are still very similar.  The type I error rate here is $\alpha =$ `r round(a,2)`.  Again, very similar.  The shape of this distribution better matches that of the original sample, but both give similar results.   
 
 &nbsp;  
 
