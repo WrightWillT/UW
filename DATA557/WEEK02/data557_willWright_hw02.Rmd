@@ -107,7 +107,7 @@ Given that the sample size is low at n = 15, we'll use a T-test to determine $C$
 $$
 \mbox{Reject}\ H_0:\mu=0\ \ \mbox{if}\ \ T = \frac{|\bar X|}{s/\sqrt{n}} > C,
 $$
-Because $C =$ `r critical_value` $> T =$ `r t`, we reject the null hypothesis. While we reject the null hypotheses in both this question and question 2, using the sample variance of 16.27 instead of the population variance of 15 and the $t_{n-1}$ distribution instead of the normal distribution led to a higher critical value for this question.   
+Because $C =$ `r critical_value` $< T =$ `r round(t,2)`, we reject the null hypothesis. While we reject the null hypotheses in both this question and question 2, using the sample variance of 16.27 instead of the population variance of 15 and the $t_{n-1}$ distribution instead of the normal distribution led to a higher critical value for this question.   
 
 &nbsp;  
 
@@ -194,9 +194,34 @@ In this case, we're seeing a mean of `r round(bimodal_xbar,2)` instead of `r rou
 &nbsp;  
 
 ```{r question1.4}
-
+waterSamples <- c(-5,-2,-1,-1,0,0,2,3,4,4,5,5,6,6) # remove 11
+n <- length(waterSamples)
+xbar <- mean(waterSamples)
+s <- sd(waterSamples)
+se <- s/sqrt(n)
+t <- xbar/se
+critical_value <- round(qt(0.975, df = n-1),2)
+ci_lower <- round(xbar-critical_value*se,2)
+ci_upper <- round(xbar+critical_value*se,2)
+distribution_visualizer(waterSamples)
+t
+critical_value
 
 ```
+The 95% confidence interval for the mean difference in concentration between aged and fresh samples is:
+  
+`r ci_lower` $\leq \mu \leq$ `r ci_upper`.
+
+The __null hypothesis__ is that there is no difference in in pollution concentration between aged and fresh samples: $H_0: \mu=0$.
+
+The __alternate hypothesis__ is that there is a difference: $H_1: \mu\neq 0$
+
+Rejection rule:
+
+$$
+\mbox{Reject}\ H_0:\mu=0\ \ \mbox{if}\ \ T = \frac{|\bar X|}{s/\sqrt{n}} > C,
+$$
+Because $C =$ `r critical_value` $> T =$ `r round(t,2)`, we fail to reject the null hypothesis. While the 11 value added higher variance to the data, it was a strong pulling force for a higher mean.  Without it, the mean of the sample is closer to 0 and, in fact, the 95% confidence interval included it.
 
 &nbsp;  
 
