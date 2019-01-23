@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1547945717360.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "4273346246",
+    "id" : "6646574F",
+    "lastKnownWriteTime" : 1548210058,
+    "last_content_update" : 1548210058438,
+    "path" : "~/UW/DATA557/WEEK02/data557_willWright_hw02.Rmd",
+    "project_path" : "WEEK02/data557_willWright_hw02.Rmd",
+    "properties" : {
+        "cursorPosition" : "49,52",
+        "last_setup_crc32" : "4CFA9F0Ac84901ab",
+        "scrollLine" : "40"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

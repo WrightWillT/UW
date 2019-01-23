@@ -48,7 +48,7 @@ distribution_visualizer <- function(
     annotate("text", 
              x = mean(data)*1.25, 
              y = max(binCounts, na.rm = TRUE)*0.75, 
-             label = paste0("x\u0305 = ", xbar),
+             label = paste0("Mean = ", xbar),
              size = 3) +
     theme_bw()  
   
@@ -78,36 +78,27 @@ A researcher is interested in measurements of a pollutant in water samples. In p
 &nbsp;  
 
 ```{r question1.1}
-waterSamples <- c(-5,-2,-1,-1,0,0,2,3,4,4,5,5,6,6,11)
+waterSamples <- c(-5, -2, -1, -1, 0, 0, 2, 3, 4, 4, 5, 5, 6, 6, 11)
 n <- length(waterSamples)
 xbar <- mean(waterSamples)
 s <- sd(waterSamples)
-se <- s/sqrt(n)
-t <- xbar/se
-# ci <- c(xbar - qnorm(0.975)*se, xbar + qnorm(0.975)*se) #used with known population variance
+se <- m/(s/sqrt(n))
+z <- m/se
+ci <- c(xbar - qnorm(0.975)*se, xbar + qnorm(0.975)*se)
 critical_value <- round(qt(0.975, df = n-1),2)
-ci_lower <- round(xbar-critical_value*se,2)
-ci_upper <- round(xbar+critical_value*se,2)
-# p_val <- 2*(1-pnorm(t)) # not asked in this question
-distribution_visualizer(waterSamples)
-t
-critical_value
+p_val <- 2*(1-pnorm(critical_value))
+
 ```
 
-The 95% confidence interval for the mean difference in concentration between aged and fresh samples is:
-  
-`r ci_lower` $\leq \mu \leq$ `r ci_upper`.
-
-The __null hypothesis__ is that there is no difference in in pollution concentration between aged and fresh samples: $H_0: \mu=0$.
-
-The __alternate hypothesis__ is that there is a difference: $H_1: \mu\neq 0$
-
-Given that the sample size is low at n = 15, we'll use a T-test to determine $C$ and whether or not to reject:
-
+The __null hypothesis__ is that there is no difference in in pollution concentration between aged and fresh samples:
 $$
-\mbox{Reject}\ H_0:\mu=0\ \ \mbox{if}\ \ T = \frac{|\bar X|}{s/\sqrt{n}} > C,
+H_0: \mu=0
 $$
-Because $C =$ `r critical_value` $> T =$ `r t`, we reject the null hypothesis. While we reject the null hypotheses in both this question and question 2, using the sample variance of 16.27 instead of the population variance of 15 and the $t_{n-1}$ distribution instead of the normal distribution led to a higher critical value for this question.   
+The __alternate hypothesis__ is that there is a difference:
+$$
+H_1: \mu\neq 0
+$$
+
 
 &nbsp;  
 
@@ -115,26 +106,10 @@ Because $C =$ `r critical_value` $> T =$ `r t`, we reject the null hypothesis. W
 
 &nbsp;  
 
-Given the shape of the sample data's distribution, we'll use a uniform from -3 to 7.
-
 ```{r question1.2}
 
-set.seed(4432)
-n=100
-reps=200
-z=rep(NA,reps)
-for(i in 1:reps){
-  x=runif(n,-3,7)
-  # shifting down 2 since we're assuming the mean is closer to 2, like the sample data
-  z[i]=(mean(x)-2)/(sd(x)/sqrt(n)) 
-}
 
-summary(z)
-critical_value = qnorm(0.975)
-a <- mean(abs(z)>critical_value)
-a
 ```
-The type I error rate is $\alpha=$ `r round(a,2)`, which approximately meets the expectation of 0.05 and seems valid. Question 2.4 resulted in a mean of 0.49 and $\alpha=$  of 0.05 using a poisson distribution, which is very similar to the results in this question. Any differences would be the result of the differences in the shape of the uniform to the poisson distribution, the sample variances, the sample sizes, number of repetitions, and the random nature of draws.
 
 &nbsp;  
 
@@ -142,23 +117,7 @@ The type I error rate is $\alpha=$ `r round(a,2)`, which approximately meets the
 
 &nbsp;  
 
-For this question, let's assume a bimodal multivariate normal distribution with 2 modes centered at -3 and 7:
 ```{r question1.3}
-n=100
-reps=200
-z=rep(NA,reps)
-mode1 <- -2
-mode2 <- 7
-for(i in 1:reps){
-  x=rmvnorm(n, mean = c(mode1,mode2))
-  # shifting down 2 since we're assuming the mean is closer to 2, like the sample data
-  z[i]=(mean(x)-2)/(sd(x)/sqrt(n)) 
-}
-
-summary(z)
-critical_value = qnorm(0.975)
-a <- mean(abs(z)>critical_value)
-a
 
 
 ```

@@ -1,0 +1,87 @@
+[0mMicrosoft Windows [Version 10.0.17763.134][0K[?25l
+(c) 2018 Microsoft Corporation. All rights reserved.[0K
+[0K
+C:\Users\Will\Documents\UW\DATA557>[0K[?25hp[0Kw[0Kd[0K[?25l
+[0K[?25h'pwd' is not recognized as an internal or external command,[0K[?25l
+operable program or batch file.[0K
+[0K
+C:\Users\Will\Documents\UW\DATA557>[0K[?25hg[0Ki[0Kt[0K[40G[?25lC:\Users\Will\Documents\UW\DATA557>git s[0K[?25ha[0K[?25lC:\Users\Will\Documents\UW\DATA557>git s[0K[?25ht[0Ka[0Kt[0Ku[0Ks[0K]0;  - git  status[?25l
+[0K[?25hgit status[0K]0;  - git  status[?25l
+On branch master[0K
+Untracked files:[0K
+  (use "git add <file>..." to include in what will be committed)[0K
+[0K
+        [0;31m.Rhistory[0m[0K
+        [0;31m.Rproj.user/[0m[0K
+[0K
+nothing added to commit but untracked files present (use "git add" to track)[0K
+[0K[?25h]0; [?25l
+C:\Users\Will\Documents\UW\DATA557>[0K[?25hd[0K[39G[?25lC:\Users\Will\Documents\UW\DATA557>cd W[0K[?25hE[0KE[0KK[0K0[0K2[0K[?25l
+[0K
+C:\Users\Will\Documents\UW\DATA557\WEEK02>[0K[?25hg[0Ki[0Kt[0K[47G[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>git s[0K[?25ht[0Ka[0Kt[0Ku[0Ks[0Kgit status[0K]0;  - git  status[?25l
+[0K[?25h]0; On branch master[0K[?25l
+Untracked files:[0K
+  (use "git add <file>..." to include in what will be committed)[0K
+[0K
+        [0;31m../.Rhistory[0m[0K
+        [0;31m../.Rproj.user/[0m[0K
+[0K
+nothing added to commit but untracked files present (use "git add" to track)[0K
+[0K
+C:\Users\Will\Documents\UW\DATA557\WEEK02>[0K[?25hg[0Ki[0Kt[0K[47G[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>git a[0K[?25hd[0Kd[0K5[0K5[0K7[0K_willWright_exercise02.pdf[0K[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>git add data557_willWright_exercise02.pd[0K[?25h[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>git add data557_willWright_exercise02.p[0K[?25h[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>git add data557_willWright_exercise02.[0K[?25h[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>git add data557_willWright_exercise02[0K[?25h[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>git add data557_willWright_exercise0[0K[?25h[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>git add data557_willWright_exercise[0K[?25h[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>git add data557_willWright_exercis[0K[?25h[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>git add data557_willWright_exerci[0K[?25h[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>git add data557_willWright_exerc[0K[?25h[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>git add data557_willWright_exer[0K[?25h[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>git add data557_willWright_exe[0K[?25h[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>git add data557_willWright_ex[0K[?25h[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>git add data557_willWright_e[0K[?25h[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>git add data557_willWright_[0K[?25hh[0Kw[0KR[0Km[0Kd[0K]0;  - git  add data557_willWright_hw02.Rmd[?25l
+[0K[?25h]0; [?25l
+C:\Users\Will\Documents\UW\DATA557\WEEK02>[0K[?25hg[0Ki[0Kt[0K[47G[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>git s[0K[?25ht[0Ka[0Kt[0Ku[0Ks[0K]0;  - git  status[?25l
+On branch master[0K
+Untracked files:[0K
+  (use "git add <file>..." to include in what will be committed)[0K
+[0K
+        [0;31m../.Rhistory[0m[0K
+        [0;31m../.Rproj.user/[0m[0K
+[0K
+nothing added to commit but untracked files present (use "git add" to track)[0K
+[0K[?25h]0; [?25l
+C:\Users\Will\Documents\UW\DATA557\WEEK02>[0K[?25hg[0Ki[0Kt[0K[47G[46G[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>gi[0K[?25h[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>g[0K[?25h[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>[0K[?25hgit status[0K[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>git add data557_willWright_hw02.Rmd[0K[?25h[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>git status[0K[?25h]0;  - git  status[?25l
+[0K[?25h]0; On branch master[0K[?25l
+Untracked files:[0K
+  (use "git add <file>..." to include in what will be committed)[0K
+[0K
+        [0;31m../.Rhistory[0m[0K
+        [0;31m../.Rproj.user/[0m[0K
+[0K
+nothing added to commit but untracked files present (use "git add" to track)[0K
+[0K
+C:\Users\Will\Documents\UW\DATA557\WEEK02>[0K[?25hc[0Kd[0K[46G[?25lC:\Users\Will\Documents\UW\DATA557\WEEK02>cd .[0K[?25h.[0K[?25l
+[0K
+C:\Users\Will\Documents\UW\DATA557>[0K[?25hc[0Kd[0K[39G[?25lC:\Users\Will\Documents\UW\DATA557>cd .[0K[?25h.[0K[?25l
+[0K
+C:\Users\Will\Documents\UW>[0K[?25hg[0Ki[0Kt[0K[32G[?25lC:\Users\Will\Documents\UW>git s[0K[?25ht[0Ka[0Kt[0Ku[0Ks[0K]0;  - git  status[?25l
+On branch master[0K
+Untracked files:[0K
+  (use "git add <file>..." to include in what will be committed)[0K
+[0K
+        [0;31mDATA557/.Rhistory[0m[0K
+        [0;31mDATA557/.Rproj.user/[0m[0K
+[0K
+nothing added to commit but untracked files present (use "git add" to track)[0K
+[0K[?25h]0; [?25l
+C:\Users\Will\Documents\UW>[0K[?25hg[0Ki[0Kt[0K[32G[?25lC:\Users\Will\Documents\UW>git c[0K[?25ho[0Km[0Km[0Ki[0Kt[0K[39G[?25lC:\Users\Will\Documents\UW>git commit -[0K[?25hm[0K[42G[?25lC:\Users\Will\Documents\UW>git commit -m "[0K[?25hd[0K[51G[?25lC:\Users\Will\Documents\UW>git commit -m "updated t[0K[?25hh[0Ke[0K[55G[?25lC:\Users\Will\Documents\UW>git commit -m "updated the h[0K[?25hw[0K[?25lC:\Users\Will\Documents\UW>git commit -m "updated the h[0K[?25h[?25lC:\Users\Will\Documents\UW>git commit -m "updated the[0K[55G[?25h[54G[?25lC:\Users\Will\Documents\UW>git commit -m "updated th[0K[?25h[?25lC:\Users\Will\Documents\UW>git commit -m "updated t[0K[?25h[?25lC:\Users\Will\Documents\UW>git commit -m "updated[0K[51G[?25h[?25lC:\Users\Will\Documents\UW>git commit -m "updated h[0K[?25hw[0K0[0K2[0K"[0Kg[0Ki[0Kt[0K[32G[?25lC:\Users\Will\Documents\UW>git s[0K[?25ht[0Ka[0Kt[0Ku[0Ks[0K]0;  - git  status[?25l
+[0K[?25h]0; On branch master[0K[?25l
+Untracked files:[0K
+  (use "git add <file>..." to include in what will be committed)[0K
+[0K
+        [0;31mDATA557/.Rhistory[0m[0K
+        [0;31mDATA557/.Rproj.user/[0m[0K
+[0K
+nothing added to commit but untracked files present (use "git add" to track)[0K
+[0K
+C:\Users\Will\Documents\UW>[0K[?25hg[0Ki[0Kt[0K[32G[?25lC:\Users\Will\Documents\UW>git s[0K[?25ht[0Ka[0Ku[0Ks[0K[?25lC:\Users\Will\Documents\UW>git stau[0K[?25h[?25lC:\Users\Will\Documents\UW>git sta[0K[?25ht[0Ku[0Ks[0K]0;  - git  status[?25l
+[0K[?25h]0; On branch master[0K[?25l
+Untracked files:[0K
+  (use "git add <file>..." to include in what will be committed)[0K
+[0K
+        [0;31mDATA557/.Rhistory[0m[0K
+        [0;31mDATA557/.Rproj.user/[0m[0K
+[0K
+nothing added to commit but untracked files present (use "git add" to track)[0K
+[0K
+C:\Users\Will\Documents\UW>[0K[?25hg[0Ki[0Kt[0K[32G[?25lC:\Users\Will\Documents\UW>git a[0K[?25hd[0Kd[0K[?25lC:\Users\Will\Documents\UW>git ad[0K[?25h[?25lC:\Users\Will\Documents\UW>git a[0K[?25h[?25lC:\Users\Will\Documents\UW>git[0K[32G[?25h[31G[?25lC:\Users\Will\Documents\UW>g[0K[?25h[?25lC:\Users\Will\Documents\UW>[0K[?25h
