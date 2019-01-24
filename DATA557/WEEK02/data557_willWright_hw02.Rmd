@@ -48,7 +48,7 @@ distribution_visualizer <- function(
     annotate("text", 
              x = mean(data)*1.25, 
              y = max(binCounts, na.rm = TRUE)*0.75, 
-             label = paste0("x\u0305 = ", xbar),
+             label = paste0("Mean = ", xbar), # "x\u0305 = " for Windows
              size = 3) +
     theme_bw()  
   
@@ -235,9 +235,9 @@ A researcher wants to evaluate the sensitivity of their assay for measuring urin
 &nbsp;  
 
 ```{r question2.1}
-
-
+a <-sum(dbinom(c(0:494), size=500, prob=0.99))
 ```
+The type I error rate is `r round(a,2)`.  
 
 &nbsp;  
 
@@ -246,9 +246,25 @@ A researcher wants to evaluate the sensitivity of their assay for measuring urin
 &nbsp;  
 
 ```{r question2.2}
+aVals <- rep(NA,500)
+for(i in 1:length(aVals)){
+  aVals[i] <- sum(dbinom(c(0:i), size=500, prob=0.99))
+}
+aValsDf <- data.frame(testPositive = 1:500, aVals = aVals)
+g <- ggplot(aValsDf, aes(x = testPositive, y = aVals))
+g + geom_line() + 
+  scale_x_continuous(limits = c(485,500)) +
+  scale_y_continuous(limits = c(0,1)) +
+  theme_bw() +
+  geom_hline(yintercept = 0.05, col = "red", linetype = "dashed")
 
+max(aValsDf$testPositive[which(aValsDf$aVals<=0.05)])
 
 ```
+Because >490 testing positive results in a type I error rate $\leq$ 0.05 and positive tests $\leq$ 490 results in a type I error rate > 0.05, the new rejection rule is:
+$$
+\mbox{Reject}\ H_0: \mbox{Positive Tests} \leq 490
+$$
 
 &nbsp;  
 
@@ -256,10 +272,7 @@ A researcher wants to evaluate the sensitivity of their assay for measuring urin
 
 &nbsp;  
 
-```{r question2.3}
-
-
-```
+Yes.
 
 &nbsp;  
 
@@ -268,9 +281,22 @@ A researcher wants to evaluate the sensitivity of their assay for measuring urin
 &nbsp;  
 
 ```{r question2.4}
+aVals <- rep(NA,100)
+for(i in 1:length(aVals)){
+  aVals[i] <- sum(dbinom(c(0:i), size=100, prob=0.99))
+}
+aValsDf <- data.frame(testPositive = 1:100, aVals = aVals)
+g <- ggplot(aValsDf, aes(x = testPositive, y = aVals))
+g + geom_line() + 
+  scale_x_continuous(limits = c(90,100)) +
+  scale_y_continuous(limits = c(0,1)) +
+  theme_bw() +
+  geom_hline(yintercept = 0.05, col = "red", linetype = "dashed")
 
+max(aValsDf$testPositive[which(aValsDf$aVals<=0.05)])
 
 ```
+In this case, our new rejection rule is to reject if the number of positive tests is $\leq$ 96 so we fail to reject the null hypothesis with 98 positive tests.  The reason for this difference is that with a smaller sample size (100 instead of 500) our SE is higher (since sqrt(n) is in the denominator).  When SE is higher, our rejection region gets smaller and, hence, it becomes more difficult to reject the null hypothesis.
 
 &nbsp;  
 
@@ -279,9 +305,10 @@ A researcher wants to evaluate the sensitivity of their assay for measuring urin
 &nbsp;  
 
 ```{r question2.5}
-
-
+p_val_smallSample <-sum(dbinom(c(0:98), size=100, p=0.99))
+p_val_largeSample <-sum(dbinom(c(0:494), size=500, p=0.99))
 ```
+The 100-sample test with 98 positives has a p-value of `r round(p_val_smallSample,3)` while the 500-sample test with 494 positives has a p-value of `r round(p_val_largeSample,2)`.
 
 &nbsp;  
 
@@ -292,9 +319,21 @@ Question 3 (Data set: 'iq.csv'. See HW1 for background).
 &nbsp;  
 
 ```{r question3.1}
+# Read data
+iqData <- read.csv("../WEEK01/iq.csv")
 
-
+# Perform calculations
+mu <- 100
+s <- sd(iqData$IQ)
+n <-nrow(iqData)
+se <- s/sqrt(n)
+xbar <- mean(iqData$IQ)
+z <-abs(xbar-mu)/se
+t_val <-qt(0.975, df=n-1)
+p_val <- 2*(1-pt(z, df=(n-1)))
 ```
+
+We reject the null hypothesis that the mean IQ score in the community is equal to 100 because the test's p-value of $\approx 0\mbox{ is} \leq \alpha = 0.05$. 
 
 &nbsp;  
 
@@ -303,9 +342,11 @@ Question 3 (Data set: 'iq.csv'. See HW1 for background).
 &nbsp;  
 
 ```{r question3.2}
-
-
+conf_upper <- xbar + t_val*se
+conf_lower <- xbar - t_val*se
 ```
+
+The 95% confidence interval for the mean IQ is `r round(conf_lower,2)` to `r round(conf_upper,2)`. Because the range does not intersect 100, the results agree with the hypothesis test.
 
 &nbsp;  
 
@@ -314,9 +355,13 @@ Question 3 (Data set: 'iq.csv'. See HW1 for background).
 &nbsp;  
 
 ```{r question3.3}
+t_val <-qt(0.995, df=n-1)
+p_val <- 2*(1-pt(z, df=(n-1)))
 
-
+conf_upper <- xbar + t_val*se
+conf_lower <- xbar - t_val*se
 ```
+In this case, our p_val is still $\approx 0$, which is $\leq \alpha = 0.01$ so we reject the null hypothesis.  The 99% confidence interval is `r round(conf_lower,2)` to `r round(conf_upper,2)`, which results in the same conclusion of rejection.
 
 &nbsp;  
 
@@ -325,9 +370,27 @@ Question 3 (Data set: 'iq.csv'. See HW1 for background).
 &nbsp;  
 
 ```{r question3.4}
+set.seed(121)
+# see what a high-n single sample looks like
+uniformData <- rnorm(10000,100,15)
+distribution_visualizer(uniformData)
 
+n=nrow(iqData)
+reps=200
+z=rep(NA,reps)
+for(i in 1:reps){
+  x=rnorm(n,100,15)
+  z[i]=(mean(x)-100)/(sd(x)/sqrt(n)) 
+}
+
+summary(z)
+
+critical_value = qnorm(0.975)
+a <- mean(abs(z)>critical_value)
+a
 
 ```
+The results agree with the theory since 5% of the results are outside the 95% confidence interval.
 
 &nbsp;  
 
@@ -336,9 +399,26 @@ Question 3 (Data set: 'iq.csv'. See HW1 for background).
 &nbsp;  
 
 ```{r question3.5}
+set.seed(999)
 
+mu <- 95
+xbar <- mean(iqData$IQ)
+n <- nrow(iqData)
+n=nrow(iqData)
+
+reps=200
+z <- rep(NA,reps)
+for(i in 1:reps){
+  x <- rnorm(n,xbar,15)
+  se <- sd(x)/sqrt(n)
+  mean <- mean(x)
+  z[i] <- (95-mean)/se
+}
+
+power <- mean(abs(z)>qnorm(0.975))
 
 ```
+The estimated power from the simulation is `r round(power,2)`.  
 
 &nbsp;  
 
@@ -347,8 +427,36 @@ Question 3 (Data set: 'iq.csv'. See HW1 for background).
 &nbsp;  
 
 ```{r question3.6}
+set.seed(999)
 
+mu_vals <- 90:100
+xbar <- mean(iqData$IQ)
+n <- nrow(iqData)
+n=nrow(iqData)
+reps=200
+
+powers <- rep(NA,length(mu_vals))
+for(j in 1:length(mu_vals)){
+  z <- rep(NA,reps)
+  for(i in 1:reps){
+    x <- rnorm(n,xbar,15)
+    se <- sd(x)/sqrt(n)
+    mean <- mean(x)
+    z[i] <- (mu_vals[j]-mean)/se
+  }
+  powers[j] <- mean(abs(z)>qnorm(0.975))
+}
+results <- data.frame(mu = mu_vals, power = powers)
+
+g <- ggplot(results, aes(x = mu, y = power))
+g + geom_line() + 
+  scale_x_continuous(limits = c(92,100)) +
+  scale_y_continuous(limits = c(0,1)) +
+  theme_bw() +
+  geom_hline(yintercept = 0.9, col = "red", linetype = "dashed")
+
+max(results$mu[which(results$power<=0.9)])
 
 ```
 
-&nbsp;  
+The largest value of the alternative hypothesis mean that would be rejected with a power of 0.9 is 95.
