@@ -83,9 +83,21 @@ The data are from an experiment designed to assess the effect of temperature on 
 &nbsp;  
 
 ```{r question1.1}
+pDat <- read.csv("process.csv")
+xbar50 <- mean(pDat$output[which(pDat$temp==50)])
+xbar100 <- mean(pDat$output[which(pDat$temp==100)])
 
+se <- sqrt(var(pDat$output[which(pDat$temp==50)])/50+var(pDat$output[which(pDat$temp==100)]))
+z <- abs((xbar50-xbar100)/se)
+c <- qnorm(0.975)
+z
+p_val <- 2*(1-pnorm(z))
+c
+conf_upper <- abs(xbar50-xbar100) + z*se
+conf_lower <- abs(xbar50-xbar100) - z*se
 
 ```
+The p-value is `r round(p_val,2)` and the confidence interval is `r round(conf_lower,2)` to `r round(conf_upper,2)`
 
 &nbsp;  
 
