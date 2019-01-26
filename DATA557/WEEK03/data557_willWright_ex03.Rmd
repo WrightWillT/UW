@@ -1,6 +1,6 @@
 ---
-title: "DATA557 Exercise 3"
-author: "Will Wright"
+title: "DATA557 Exercise 3, Problem 3"
+author: "Tara Wilson, Lauren Heintz, Ben Bordeur Mathieu, and Will Wright"
 date: "January 23, 2019"
 output: pdf_document
 ---
@@ -14,251 +14,61 @@ library(scales)
 library(ggthemes)
 library(qqplotr)
 library(gridExtra)
+library(BSDA)
 
-# READ DATA
-
-# set up color palettes 
-colors <- ggthemes_data[["tableau"]][["color-palettes"]][["regular"]][[2]][[2]]
-
-distribution_visualizer <- function(
-      data, 
-      title = "Histogram and Density", 
-      x = "Values", 
-      binwidthInput = (max(data)-min(data))/15){
-  binwidthInput <- binwidthInput
-  binCounts <- .bincode(data, seq(0,max(data), binwidthInput))
-  xbar <- round(mean(data),1)
-  sd <- round(sd(data),1)
-  g <- ggplot(data.frame(data), aes(data)) +
-    geom_histogram(fill = colors[1],
-                   color = colors[2],
-                   binwidth = binwidthInput) +
-    geom_vline(aes(xintercept = mean(data)),
-               color = colors[3],
-               linetype = "dashed",
-               size = 0.7) +
-    geom_density(aes(y = binwidthInput * ..count..), 
-                 alpha = 0.2, 
-                 fill = colors[2],
-                 color = colors[1]) +
-    labs(title = title,
-         x = x,
-         y = "Frequency") +
-    annotate("text", 
-             x = mean(data)*1.25, 
-             y = max(binCounts, na.rm = TRUE)*0.75, 
-             label = paste0("Mean = ", xbar), # "x\u0305 = " for Windows
-             size = 3) +
-    theme_bw()  
-  
-  
-  p <- ggplot(data.frame(data), aes(sample = data)) +
-    stat_qq_band(color = colors[1], fill = colors[2]) +
-    stat_qq_line(color = colors[3], linetype = "dashed", size = 0.7) +
-    stat_qq_point(size = 0.8, alpha = 0.3) +
-    labs(title = "IQ Q-Q Plot",
-         x = "Theoretical Values",
-         y = "Sample Values") +
-    theme_bw()
-  
-  grid.arrange(g, p, ncol = 2)
-}
-```
-
-## Problems
-
-
-Applied Statistics and Design of Experiments
-Exercise 3
-January 23, 2018
-
-Question 1
-
-Data: ‘process.csv’
-
-The data are from an experiment designed to assess the effect of temperature on the output of a manufacturing process. For this experiment temperatures of 50 or 100 degrees were randomly assigned to process runs and yield was recorded from each run.
-
-1.1. Perform a large-sample Z-test to compare mean output for the two temperatures (use the sample SDs to calculate the test statistic). Is there evidence that output is affected by temperature? State the p-value and give a 95% confidence interval for the difference between mean yields. 
-
-&nbsp;  
-
-```{r question1.1}
-pDat <- read.csv("process.csv")
-xbar50 <- mean(pDat$output[which(pDat$temp==50)])
-xbar100 <- mean(pDat$output[which(pDat$temp==100)])
-
-se <- sqrt(var(pDat$output[which(pDat$temp==50)])/50+var(pDat$output[which(pDat$temp==100)]))
-z <- abs((xbar50-xbar100)/se)
-c <- qnorm(0.975)
-z
-p_val <- 2*(1-pnorm(z))
-c
-conf_upper <- abs(xbar50-xbar100) + z*se
-conf_lower <- abs(xbar50-xbar100) - z*se
-
-```
-The p-value is `r round(p_val,2)` and the confidence interval is `r round(conf_lower,2)` to `r round(conf_upper,2)`
-
-&nbsp;  
-
-1.2. Perform a simulation study to estimate the type I error rate of the large-sample Z-test. Assume the population for both groups is normal with mean equal to 1000 and SD equal to 100 (mean and SD should be the same in each group). Use the same sample sizes for each group as in the data set. Use a 0.05 level of significance. What is the estimated type I error probability? 
-
-&nbsp;  
-
-```{r question1.2}
-
+# read file
+pDat <- read.csv("../WEEK03/process.csv")
 
 ```
 
-&nbsp;  
-
-1.3. Run a simulation study assuming the common mean in the two groups is equal to 10 and the common SD is equal to 20. How do the results compare? Would you expect a different type I error rate when you change the values of the mean and SD? 
-
-&nbsp;  
-
-```{r question1.3}
-
-
-```
-
-&nbsp;  
-
-1.4. Perform a simulation study to assess the performance of the large-sample Z-test for non-normal populations. Choose a distribution that is quite different from a normal distribution (e.g., t with low df, exponential, uniform or dichotomous). Is the type I error probability much different than 0.05?
-
-&nbsp;  
-
-```{r question1.4}
-
-
-```
-
-&nbsp;  
-
-1.5. Repeat the simulation studies from 1.3 and 1.4 using sample sizes for the two groups equal to 5. How do the results change?
-
-&nbsp;  
-
-```{r question1.5}
-
-
-```
-
-&nbsp;  
-
-Question 2
-
-2.1. Perform the equal-variance t-test and the Welch t-test to compare mean output in the two temperature groups from the process experiment. Compare to the results from the large-sample Z-test.  Comment on the validity of each of the three test methods for this experiment. Which one would you choose to use?
-
-&nbsp;  
-
-```{r question2.1}
-
-
-```
-
-&nbsp;  
-
-2.2. Now suppose that equipment failure had occurred and the last 15 runs of the experiment had been lost (delete rows 46-60 in the data set). Conduct each of the three tests (large-sample Z-test, equal-variance t-test, and Welch t-test), and compute the corresponding 95% confidence intervals. How do the results from the three tests compare on this new data set?
-
-&nbsp;  
-
-```{r question2.2}
-
-
-```
-
-&nbsp;  
-
-2.3. Conduct a simulation study to assess the performance of the three test procedures under the following assumptions:
-
-Temp=50: n=30, output is distributed as N(1000,80)
-Temp=100: n=15, output is distributed as N(1000,20)
-
-Estimate the type I error probabilities for the large-sample Z-test, equal-variance t-test, and the Welch t-test for each choice of group sample sizes. Use a 0.05 level of significance.
-
-&nbsp;  
-
-```{r question2.3}
-
-
-```
-
-&nbsp;  
-
-2.4. Conduct a simulation study to assess the performance of the three test procedures under these assumptions:
-
-Temp=50: n=30, output is distributed as N(1000,20)
-Temp=100: n=15, output is distributed as N(1000,80)
-
-Estimate the type I error probabilities for the large-sample Z-test, equal-variance t-test, and the Welch t-test for each choice of group sample sizes. Use a 0.05 level of significance. How do the results compare between the two sets of assumptions?
-
-&nbsp;  
-
-```{r question2.4}
-
-
-```
-
-&nbsp;  
 
 Question 3 
 
-For this question you are to work in groups. Find a group of 3 or 4 students and work together to come to a solution. One member of the group will report the results for the group at the end of the exercise.
+For this question you are to work in groups. Find a group of 3 or 4 students and work together to come to a solution. One member of the group will report the results verbally for the group at the end of the exercise. The reporter also posts the solution to the dropbox for Exercise 3. Include the names of the members of the group on the solution.
 
 Suppose that a new experiment is being designed to determine the effect on output of temperatures higher than 100. In particular, the aim of the new experiment is to test the null hypothesis that the mean output is the same for temperature 100 and temperature 120. The researcher would like to have at least 90% power to detect a difference between these conditions in mean output equal to 75. Your job is to determine the sample sizes for each group and to decide which test statistic will be used to test the null hypothesis. Justify your answers.
 
 &nbsp;  
 
 ```{r question3}
+set.seed(999)
 
+# calculate input parameters
+output_diff <- 75
+sd_100 <- sd(pDat$output[which(pDat$temp==100)])
+n_vals <- 1:100
+reps=1000
 
-```
+# simulations
+powers_z <- rep(NA,length(n_vals))
+powers_t <- rep(NA,length(n_vals))
+powers_w <- rep(NA,length(n_vals))
+for(j in 1:length(n_vals)){
+  test_statistic <- rep(NA,reps)
+  for(i in 1:reps){
+    x <- rnorm(n_vals[j], output_diff, sd_100)
+    y <- rnorm(n_vals[j], output_diff, sd_100)
+    se <- sqrt(var(x)/n_vals[j]+var(y)/n_vals[j])
+    test_statistic[i] <- (output_diff)/se
+  }
+  powers_z[j] <- mean(abs(test_statistic)>qnorm(0.975)) # for z-test
+  # powers_t[j] <- mean(abs(test_statistic)>qt(0.975, df = )) # incomplete for t-test
+  # powers_w[j] <- mean(abs(test_statistic)>qt(0.975)) # incomplete for welch's t-test
+}
+results <- data.frame(n = n_vals, power = powers_z)
 
-&nbsp;  
+g <- ggplot(results, aes(x = n, y = power))
+g + geom_line() + 
+  scale_x_continuous(limits = c(10,50)) +
+  theme_bw() +
+  geom_hline(yintercept = 0.9, col = "red", linetype = "dashed")
 
-Question 4
-
-Data: ‘fieldgoals.csv’
-
-The data are from a random sample of field goal attempts in National Football League games from 2008.
-
-The variables to be used here are:
-
-distance: distance from ball placement to goal posts (yards)
-GOOD: indicator of whether the attempt was successful
-
-4.1. Compare the proportions of field goals that are successful for attempts at distance 40 yards or less versus more than 40 yards using the large-sample Z-test with significance level 0.05. Report the p-value from the test. Perform the test using the chi-square test with and without continuity correction and also using Fisher’s exact test. How do the results of the different tests compare?
-
-&nbsp;  
-
-```{r question4.1}
-
-
-```
-
-&nbsp;  
-
-4.2. Conduct a simulation study to estimate the type I error probability of the large-sample Z-test. Does your simulation study support the validity of the test in this situation?
-
-&nbsp;  
-
-```{r question4.2}
-
-
-```
-
-&nbsp;  
-
-4.3. Repeat the simulation study but use sample sizes of 30 in each group. For this simulation include the large-sample Z-test, the chi-square test with continuity correction and Fisher’s exact test. Which test has the greatest validity in this situation based on your simulation?
-
-&nbsp;  
-
-```{r question4.3}
-
+ideal_n <- max(results$n[which(results$power<=0.9)]) # using z-test; though this is not our recommendation
 
 ```
 
-&nbsp;  
+The results of this power analysis show that the needed sample size is `r ideal_n` assuming we wanted to use the z-statistic to calculate power.  
 
+We plan to conduct a simulation study to find a sample size suited for a power of 0.9 using the Welch t-test so that our test does not rely on equal variances. Additionally, this allows our sample sizes to vary if any errors occur in sampling as well.
 
-
+Then we would conduct a simulation study to assess the performance of the Welch t-test using simulated data from t distributions using the sample mean and variance of the 100 degrees data. We could also introduce variations to our sample sizes and variances to test the resilience of our experiment structure. The reliance would be evaluated by getting a balance between type one error probably (about 0.05) while maintaining the power above 0.9.
