@@ -1,0 +1,80 @@
+---
+title: "Exercise 3 - Question 2 Solution"
+output: pdf_document
+---
+
+#Question 2
+
+##2.1
+
+```{r}
+d <- read.csv("process.csv")
+# Equal-variance t-test
+t.test(d$output[d$temp==50],d$output[d$temp==100],var.equal=T)
+```
+
+```{r}
+#Welch t-test
+t.test(d$output[d$temp==50],d$output[d$temp==100],var.equal=F)
+```
+
+The equal-variance and Welch t-tests give the same result because the sample sizes in the two groups are equal. The large-sample Z-test gives a slightly different p-value. 
+
+# 2.2
+
+```{r}
+d2 <- d[1:45,]
+#Equal-variance t-test
+with(d2,t.test(output[temp==50],output[temp==100],var.equal=T))
+#Welch t-test
+result<-with(d2,t.test(output[temp==50],output[temp==100],var.equal=F))
+result
+#Large-sample Z-test
+Z<-result$statistic
+p=2*(1-pnorm(abs(Z)))
+p
+```
+
+#2.3
+
+```{r}
+N<-5000
+set.seed(102)
+n1<-30
+n2<-15
+n<-n1+n2
+sim_data<-data.frame(temp=c(rep(50,n1),rep(100,n2)),output=rep(NA,n))
+sim_result<- data.frame(p.equal.var=rep(NA,N),p.Welch=rep(NA,N),p.Z=rep(NA,N))
+for(i in 1:N){
+    sim_data$output<-rnorm(n,mean=1000,sd=c(rep(80,n1),rep(20,n2)))
+    result<-with(sim_data,t.test(output[temp==50],output[temp==100],var.equal=T))
+    sim_result[i,1]<-result$p.value
+    result<-with(sim_data,t.test(output[temp==50],output[temp==100],var.equal=F))
+    sim_result[i,2]<-result$p.value
+    Z<-result$statistic
+    sim_result[i,3]<-2*(1-pnorm(Z))
+}
+apply(sim_result<0.05,2,mean)
+```
+
+#2.4
+
+```{r}
+N<-5000
+set.seed(102)
+n1<-30
+n2<-15
+n<-n1+n2
+sim_data<-data.frame(temp=c(rep(50,n1),rep(100,n2)),output=rep(NA,n))
+sim_result<- data.frame(p.equal.var=rep(NA,N),p.Welch=rep(NA,N),p.Z=rep(NA,N))
+for(i in 1:N){
+    sim_data$output<-rnorm(n,mean=1000,sd=c(rep(20,n1),rep(80,n2)))
+    result<-with(sim_data,t.test(output[temp==50],output[temp==100],var.equal=T))
+    sim_result[i,1]<-result$p.value
+    result<-with(sim_data,t.test(output[temp==50],output[temp==100],var.equal=F))
+    sim_result[i,2]<-result$p.value
+    Z<-result$statistic
+    sim_result[i,3]<-2*(1-pnorm(Z))
+}
+apply(sim_result<0.05,2,mean)
+```
