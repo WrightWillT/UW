@@ -8,8 +8,6 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(ggplot2)
-library(pwr)
-library(MKmisc)
 library(tidyr)
 library(dplyr)
 library(scales)
@@ -86,6 +84,8 @@ For this question, you should continue to work with your group on the answer tha
 
 ## Question 1 Findings:
 
+Team: Tara Wilson, Lauren Heintz, Ben Bordeur Mathieu, and Will Wright
+
 In our approach to this question, we first inspected the known experimental parameters to help determine which statistical test to use. In particular, we were interested in what we could learn about the distributions from the two samples of n=30 from the prior experiment for temperatures of 50 and 100.  
 
 ```{r question1_ part1}
@@ -144,7 +144,7 @@ distribution_visualizer(residuals_100)
 
 Based on these results, normality seems plausible, which satisfies the required assumption to move forward with the following simulations:
 
-To examine the relationship between sample sizes and power, we investigated 3 conditions:
+To examine the relationship between sample sizes, power, and equal/unequal variance we investigated 3 conditions.  When assuming equal variance, we use the variance from the temp = 100 condition.  When assuming unequal variance, we use the modeled variance from the linear model above.
 
 1. Assuming a completely normal distribution with equal variance using a Z-statistic
 
@@ -152,50 +152,65 @@ To examine the relationship between sample sizes and power, we investigated 3 co
 
 3. Assuming a t-distribution with unequal variance using a T-statistic (Welch's T-test)
 
+4. Assuming a t-distribution with equal variance using a T-statistic (Welch's T-test)
+
 
 Below, we simulated 1000 samples in each condition to get a mean power per each sample size from 1 to 100:
 
 ```{r question1_part4}
 # calculate input parameters
-output_diff <- 75
 n_vals <- 1:100
 reps=1000
 
 # simulations
 powers_z <- rep(NA,length(n_vals))
 powers_t <- rep(NA,length(n_vals))
-powers_w <- rep(NA,length(n_vals))
+powers_w_unequalVar <- rep(NA,length(n_vals))
+powers_w_equalVar <- rep(NA,length(n_vals))
 for(j in 1:length(n_vals)){
   test_statistic_equalVar <- rep(NA,reps)
   test_statistic_unequalVar <- rep(NA,reps)
-  welch_df <- rep(NA,reps)
+  welch_df_equalVar <- rep(NA,reps)
+  welch_df_unequalVar <- rep(NA,reps)
   for(i in 1:reps){
+    # set mean for the temp = 100 condition to 75 and 0 for the temp = 120 condition to get a diff of 75
     temp_100sim <- rnorm(n_vals[j], 75, sd_100)
     temp_120sim_equalVar <- rnorm(n_vals[j], 0, sd_100)
     temp_120sim_unequalVar <- rnorm(n_vals[j], 0, sd_120)
+    # calculate SE's
     se_equalVar <- sqrt(var(temp_100sim)/n_vals[j]+var(temp_120sim_equalVar)/n_vals[j])
     se_unequalVar <- sqrt(var(temp_100sim)/n_vals[j]+var(temp_120sim_unequalVar)/n_vals[j])
+    # calculate test statistics
     test_statistic_equalVar[i] <- abs(mean(temp_100sim)-mean(temp_120sim_equalVar))/se_equalVar
     test_statistic_unequalVar[i] <- abs(mean(temp_100sim)-mean(temp_120sim_unequalVar))/se_unequalVar
+    # calculate sds for df calculations
     temp_100sim_sd <- sd(temp_100sim)
-    temp_120sim_sd <- sd(temp_120sim_unequalVar)
-    welch_df[i] <- (temp_100sim_sd^2/n_vals[j] + temp_120sim_sd^2/n_vals[j])^2/
-      (temp_100sim_sd^4/(n_vals[j]^2*(n_vals[j]-1)) + temp_120sim_sd^4/(n_vals[j]^2*(n_vals[j]-1))) 
+    temp_120sim_sd_equalVar <- sd(temp_120sim_equalVar)
+    temp_120sim_sd_unequalVar <- sd(temp_120sim_unequalVar)
+    # calculate welch's df for both equal and unequal var conditions
+    welch_df_equalVar[i] <- (temp_100sim_sd^2/n_vals[j] + temp_120sim_sd_equalVar^2/n_vals[j])^2/
+      (temp_100sim_sd^4/(n_vals[j]^2*(n_vals[j]-1)) + temp_120sim_sd_equalVar^4/(n_vals[j]^2*(n_vals[j]-1))) 
+    welch_df_unequalVar[i] <- (temp_100sim_sd^2/n_vals[j] + temp_120sim_sd_unequalVar^2/n_vals[j])^2/
+      (temp_100sim_sd^4/(n_vals[j]^2*(n_vals[j]-1)) + temp_120sim_sd_unequalVar^4/(n_vals[j]^2*(n_vals[j]-1))) 
   }
   powers_z[j] <- mean(abs(test_statistic_equalVar)>qnorm(0.975)) # for z-test
   powers_t[j] <- mean(abs(test_statistic_equalVar)>qt(0.975, df = n_vals[j]-2)) # t-test
-  welch_df <- mean(welch_df)
-  powers_w[j] <- mean(abs(test_statistic_unequalVar)>qt(0.975, df = welch_df)) # welch's t-test
+  welch_df_equalVar <- mean(welch_df_equalVar)
+  welch_df_unequalVar <- mean(welch_df_unequalVar)
+  powers_w_equalVar[j] <- mean(abs(test_statistic_equalVar)>qt(0.975, df = welch_df_equalVar)) # welch's t-test
+  powers_w_unequalVar[j] <- mean(abs(test_statistic_unequalVar)>qt(0.975, df = welch_df_unequalVar)) # welch's t-test
 }
-results <- data.frame(n = rep(n_vals,3), 
+results <- data.frame(n = rep(n_vals,4), 
                       test_type = c(rep("Z-test", length(n_vals)),
                                      rep("T-test", length(n_vals)),
-                                     rep("Welch's T-test", length(n_vals))),
-                      power = c(powers_z, powers_t, powers_w))
+                                     rep("Welch's T-test, Equal Var", length(n_vals)),
+                                     rep("Welch's T-test, Modeled Var", length(n_vals))),
+                      power = c(powers_z, powers_t, powers_w_equalVar, powers_w_unequalVar))
 
 ideal_n_z <- min(results$n[which(results$power>=0.9 & results$test_type == "Z-test")])
 ideal_n_t <- min(results$n[which(results$power>=0.9 & results$test_type == "T-test")])
-ideal_n_w <- min(results$n[which(results$power>=0.9 & results$test_type == "Welch's T-test")])
+ideal_n_w_equalVar <- min(results$n[which(results$power>=0.9 & results$test_type == "Welch's T-test, Equal Var")])
+ideal_n_w_unequalVar <- min(results$n[which(results$power>=0.9 & results$test_type == "Welch's T-test, Modeled Var")])
 
 g <- ggplot(results, aes(x = n, y = power, color = test_type))
 g + geom_line() + 
@@ -204,17 +219,18 @@ g + geom_line() +
   geom_hline(yintercept = 0.9, col = "red", linetype = "dashed") +
   geom_vline(xintercept = ideal_n_z, col = "#619CFF", linetype = 3) +
   geom_vline(xintercept = ideal_n_t, col = "#F8766D", linetype = 3) +
-  geom_vline(xintercept = ideal_n_w, col = "#00BA38", linetype = 3) +
+  geom_vline(xintercept = ideal_n_w_equalVar, col = "#00BA38", linetype = 3) +
+  geom_vline(xintercept = ideal_n_w_unequalVar, col = "#00BFC4", linetype = 3) +
   labs(title = "Power by Sample Size and Test Type",
        x = "Sample Size",
        y = "Power") +
   scale_color_discrete(name = "Test Type")
 ```
 
-The results of this power analysis show that the needed sample size is `r ideal_n_z`, `r ideal_n_t`, or `r ideal_n_w` depending on if we wanted to go with a Z-test, T-test, or Welch's T-test, respectively. 
+The results of this power analysis show that the needed sample size is `r ideal_n_z`, `r ideal_n_t`, `r ideal_n_w_equalVar`, or `r ideal_n_w_unequalVar` depending on if we wanted to go with a Z-test, T-test, Welch's T-test with equal variance, or Welch's T-test with modeled variance, respectively. 
 
 Recommendation:
-We ruled out the Z-test even before we started since it's the approach with the most assumptions (normality, equal variance, and a sufficiently large sample). Between the T-test and Welch's T-test, we ultimately sided with the sample size of `r ideal_n_t` via the results from the T-test simulation with the assumption of equal variance. While it is likely the case that the smaller standard deviation for a temperature of 120 is true given our linear model and we could therefore use a Welch's T-test, we'd prefer to take a more conservative approach and assume the standard deviation is equal to the higher standard deviation at temp = 100. 
+All the tests agree that a sample of 75 achieves at least a power of 90%. Because the modeled variance is smaller for the temp = 120 condition, Welch's T-test using this variance produced a smaller ideal n of 73. While it is likely the case that the smaller variance, we'd prefer to take a more conservative approach and assume the variance is equal to the higher standard deviation at temp = 100. This being the case, we recommend a sample size of 75. 
 
 
 &nbsp;  
