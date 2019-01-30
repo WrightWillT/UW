@@ -144,15 +144,19 @@ distribution_visualizer(residuals_100)
 
 Based on these results, normality seems plausible, which satisfies the required assumption to move forward with the following simulations:
 
-To examine the relationship between sample sizes, power, and equal/unequal variance we investigated 3 conditions.  When assuming equal variance, we use the variance from the temp = 100 condition.  When assuming unequal variance, we use the modeled variance from the linear model above.
+To examine the relationship between sample sizes, power, and equal/unequal variances we investigated 5 conditions.  When assuming equal variance, we use the variance from the temp = 100 condition.  When assuming unequal variance, we tested two variants: using the modeled variance from the linear model above as well as the variance from the temp = 50 condition.  The reasoning with the latter is that it's possible that the temp = 100 condition is a minimum point of variance and that it climbs rapidly as the temperature increases.
 
 1. Assuming a completely normal distribution with equal variance using a Z-statistic
 
 2. Assuming a t-distribution with equal variance using a T-statistic
 
-3. Assuming a t-distribution with unequal variance using a T-statistic (Welch's T-test)
+3. Assuming a t-distribution with the modeled variance for temp = 120 using a T-statistic (Welch's T-test)
 
-4. Assuming a t-distribution with equal variance using a T-statistic (Welch's T-test)
+4. Assuming a t-distribution with unequal variance where temp = 120 has the variance of the temp = 50 condition, using a T-statistic (Welch's T-test)
+
+5. Assuming a t-distribution with equal variance to temp = 100 using a T-statistic (Welch's T-test)
+
+
 
 
 Below, we simulated 1000 samples in each condition to get a mean power per each sample size from 1 to 100:
