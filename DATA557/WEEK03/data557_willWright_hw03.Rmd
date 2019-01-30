@@ -8,137 +8,247 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(ggplot2)
-library(pwr)
-library(MKmisc)
 library(tidyr)
+library(dplyr)
+library(scales)
+library(ggthemes)
+library(qqplotr)
+library(gridExtra)
+
+# READ DATA
+
+# set up color palettes 
+colors <- ggthemes_data[["tableau"]][["color-palettes"]][["regular"]][[2]][[2]]
+
+distribution_visualizer <- function(
+      data, 
+      title = "Histogram and Density", 
+      x = "Values", 
+      binwidthInput = (max(data)-min(data))/15){
+  binwidthInput <- binwidthInput
+  binCounts <- .bincode(data, seq(0,max(data), binwidthInput))
+  xbar <- round(mean(data),1)
+  sd <- round(sd(data),1)
+  g <- ggplot(data.frame(data), aes(data)) +
+    geom_histogram(fill = colors[1],
+                   color = colors[2],
+                   binwidth = binwidthInput) +
+    geom_vline(aes(xintercept = mean(data)),
+               color = colors[3],
+               linetype = "dashed",
+               size = 0.7) +
+    geom_density(aes(y = binwidthInput * ..count..), 
+                 alpha = 0.2, 
+                 fill = colors[2],
+                 color = colors[1]) +
+    labs(title = title,
+         x = x,
+         y = "Frequency") +
+    annotate("text", 
+             x = mean(data)*1.25, 
+             y = max(binCounts, na.rm = TRUE)*0.75, 
+             label = paste0("Mean = ", xbar), # "x\u0305 = " for Windows
+             size = 3) +
+    theme_bw()  
+  
+  
+  p <- ggplot(data.frame(data), aes(sample = data)) +
+    stat_qq_band(color = colors[1], fill = colors[2]) +
+    stat_qq_line(color = colors[3], linetype = "dashed", size = 0.7) +
+    stat_qq_point(size = 0.8, alpha = 0.3) +
+    labs(title = "Q-Q Plot",
+         x = "Theoretical Values",
+         y = "Sample Values") +
+    theme_bw()
+  
+  grid.arrange(g, p, ncol = 2)
+}
 
 ```
 
-Instructions
+# Instructions
 
 Submit your solutions in pdf format to the dropbox on the canvas page by 5:00PM, Wednesday January 30. You do not need to include your R code with your solutions for this assignment.
 
 For question 1, you are to work in groups. For the other questions, you may work together to help each other solve problems, but you should do all the work, create your own solutions, and hand in your own work without copying others' work.
 
-Question 1. (This is Q3 of Exercise 3.)
+## Question 1. (This is Q3 of Exercise 3.)
 
 Suppose that a new experiment is being designed to determine the effect on output of temperatures higher than 100. In particular, the aim of the new experiment is to test the null hypothesis that the mean output is the same for temperature 100 and temperature 120. The researcher would like to have at least 90% power to detect a difference between these conditions in mean output equal to 75. Your job is to determine the sample sizes for each group and to decide which test statistic will be used to test the null hypothesis. Justify your answers.
 
 For this question, you should continue to work with your group on the answer that you developed in class on Jan 23.  The group member who did the original posting will receive feedback from me on canvas by Saturday morning and should relay it to the other group members. Work together either in person or electronically to develop your final solution. The group member who did the original posting should include the group's solution in their HW 3 submission, including the names of all group members. The grade assigned for the solution to this question will be applied to the grade for the HW for all group members.
 
-&nbsp;  
+## Question 1 Findings:
 
+*Team:* Tara Wilson, Lauren Heintz, Ben Bordeur Mathieu, and Will Wright
 
-```{r question1}
+**Summary:** We started by confirming the relative nomality of the residual distributions. Without knowing the variance of the temp = 120 condition, we tested several possibilities.  Ultimately, we recommend the most conservative option of n = 92 via a Welch's t-test simulation with unequal variance where we assume the variance of the temp = 120 condition is equal to the higher variance of the temp = 50 condition.  
 
-# read file
+**Details:** In our approach to this question, we first inspected the known experimental parameters to help determine which statistical test to use. In particular, we were interested in what we could learn about the distributions from the two samples of n=30 from the prior experiment for temperatures of 50 and 100.  
+
+```{r question1_ part1, echo = FALSE}
+# read file and set seed for reproducibility
 pDat <- read.csv("../WEEK03/process.csv")
-set.seed(999)
+set.seed(20190127)
 
-# calculate input parameters
-output_diff <- 75
-n_vals <- 1:100
-reps=1000
+# subset and calculate means and sds
+data_50 <- pDat$output[which(pDat$temp==50)]
+data_100 <- pDat$output[which(pDat$temp==100)]
+mean_50 <- mean(data_50)
+mean_100 <- mean(data_100)
+sd_50 <- sd(data_50)
+sd_100 <- sd(data_100)
+```
 
-# standard deviations
-sd_50 <- sd(pDat$output[which(pDat$temp==50)])
-sd_100 <- sd(pDat$output[which(pDat$temp==100)])
+* The mean and standard deviation for the sample with a temperature of 50 are `r round(mean_50,2)` and `r round(sd_50,2)`.
+
+* The mean and standard deviation for the sample with a temperature of 100 are `r round(mean_100,2)` and `r round(sd_100,2)`.
+
+Next, in order to estimate the standard deviation for a new sample with a temperature of 120, we used a linear model to extrapolate. Given more data or context about the machine where measurements are taken, we could likely make better assumptions about what standard deviation is reasonable. For instance, if we know that failures happen more frequently above 100 degrees, a linear model would not be appropriate. Given our lack of knowledge of the true distribution of variance, this is an optimistic approximation.
+
+```{r question1_part2, echo = FALSE, fig.height=3, fig.width=4.5, fig.align="center"}
 # for temp = 120, use a linear model to estimate based on temp = 50 and temp = 100 data
 temps <- c(50,100)
 sds <- c(sd_50, sd_100)
 fit1 <- lm(sds ~ temps)
 sd_120 <- fit1$coefficients[1]+fit1$coefficients[2]*120 # linear model for est sd of temp = 120
 sdDat <- data.frame(temps = c(temps, 120), sds = c(sds,sd_120)) #append new datapoint
+
+# plot modeled SD for temp = 120
 p <- ggplot(sdDat, aes(x = temps, y = sds))
-p + geom_point() +
-  geom_smooth(method = "lm", se = FALSE) +
+p + geom_point(size = 1.4, alpha = 0.3) +
+  geom_smooth(method = "lm", se = FALSE, color = colors[1], alpha = 0.3) +
   theme_bw() +
-  labs(title = "Modeled Standard Deviation Based on Temperature",
+  labs(title = "Modeled Standard Deviation",
        x = "Temperature",
        y = "Standard Deviation") +
   scale_y_continuous(limits = c(50,200)) +
   scale_x_continuous(limits = c(30,150)) +
   annotate("text", 120, sd_120-15, label = paste0("Est SD of ",round(sd_120,2)))
+```
+
+Our model shows an estimated standard deviation of `r round(sd_120,2)`.
+
+Then, we inspected the distribution of residuals for the temp = 50 and temp = 100 cases to see if normality is a reasonable assumption:
+
+```{r question1_part3, echo = FALSE, fig.height=2.5}
+# inspect residuals
+residuals_50 <- data_50 - mean_50
+residuals_100 <- data_100 - mean_100
+distribution_visualizer(residuals_50, title = "Temp = 50 Histogram") 
+distribution_visualizer(residuals_100, title = "Temp = 100 Histogram")
+```
+
+Based on these results, normality seems plausible, which satisfies the required assumption to move forward with the following simulations:
+
+To examine the relationship between sample sizes and power, we investigated 5 conditions:
+
+1. Assuming a completely normal distribution with equal variance using a Z-statistic
+
+2. Assuming a t-distribution with equal variance using a T-statistic
+
+3. Assuming a t-distribution with unequal variance using a T-statistic (Welch's T-test) (Optimistic with our linear approximation)
+
+4. Assuming a t-distribution with unequal variance using a T-statistic (Welch's T-test) (Pessimistic with our highest known sd for temp=50)
+
+3. Assuming a t-distribution with variance equal to the temp = 100 condition using a T-statistic (Welch's T-test) 
+
+Below, we simulated 1000 samples in each condition to get a mean power per each sample size from 1 to 100 and graphed the result between 70 and 100 for clarity:
+
+```{r question1_part4, echo = FALSE, warning=FALSE, message=FALSE}
+# calculate input parameters
+output_diff <- 75
+n_vals <- 1:100
+reps=1000
 
 # simulations
 powers_z <- rep(NA,length(n_vals))
 powers_t <- rep(NA,length(n_vals))
-powers_w <- rep(NA,length(n_vals))
+powers_w_unequalVar_o <- rep(NA,length(n_vals)) # optimistic with a smaller var
+powers_w_unequalVar_p <- rep(NA,length(n_vals)) # pessimistic with a larger var
+powers_w_equalVar <- rep(NA,length(n_vals))
 for(j in 1:length(n_vals)){
   test_statistic_equalVar <- rep(NA,reps)
-  test_statistic_unequalVar <- rep(NA,reps)
-  welch_df <- rep(NA,reps)
+  test_statistic_unequalVar_o <- rep(NA,reps)
+  test_statistic_unequalVar_p <- rep(NA,reps)
+  welch_df_equalVar <- rep(NA,reps)
+  welch_df_unequalVar_o <- rep(NA,reps)
+  welch_df_unequalVar_p <- rep(NA,reps)
   for(i in 1:reps){
+    # set mean for the temp = 100 condition to 75 and 0 for the temp = 120 condition to get a diff of 75
     temp_100sim <- rnorm(n_vals[j], output_diff, sd_100)
-    temp_120sim_equalVar <- rnorm(n_vals[j], output_diff, sd_100)
-    temp_120sim_unequalVar <- rnorm(n_vals[j], output_diff, sd_120)
+    temp_120sim_equalVar <- rnorm(n_vals[j], 0, sd_100)
+    temp_120sim_unequalVar_o <- rnorm(n_vals[j], 0, sd_120)
+    temp_120sim_unequalVar_p <- rnorm(n_vals[j], 0, sd_50)
+    # calculate SE's
     se_equalVar <- sqrt(var(temp_100sim)/n_vals[j]+var(temp_120sim_equalVar)/n_vals[j])
-    se_unequalVar <- sqrt(var(temp_100sim)/n_vals[j]+var(temp_120sim_unequalVar)/n_vals[j])
-    test_statistic_equalVar[i] <- (output_diff)/se_equalVar
-    test_statistic_unequalVar[i] <- (output_diff)/se_unequalVar
+    se_unequalVar_o <- sqrt(var(temp_100sim)/n_vals[j]+var(temp_120sim_unequalVar_o)/n_vals[j])
+    se_unequalVar_p <- sqrt(var(temp_100sim)/n_vals[j]+var(temp_120sim_unequalVar_p)/n_vals[j])
+    # calculate test statistics
+    test_statistic_equalVar[i] <- abs(mean(temp_100sim)-mean(temp_120sim_equalVar))/se_equalVar
+    test_statistic_unequalVar_o[i] <- abs(mean(temp_100sim)-mean(temp_120sim_unequalVar_o))/se_unequalVar_o
+    test_statistic_unequalVar_p[i] <- abs(mean(temp_100sim)-mean(temp_120sim_unequalVar_p))/se_unequalVar_p
+    # calculate sds for df calculations
     temp_100sim_sd <- sd(temp_100sim)
-    temp_120sim_sd <- sd(temp_120sim_unequalVar)
-    welch_df[i] <- (temp_100sim_sd^2/n_vals[j] + temp_120sim_sd^2/n_vals[j])^2/
-      (temp_100sim_sd^4/(n_vals[j]^2*(n_vals[j]-1)) + temp_120sim_sd^4/(n_vals[j]^2*(n_vals[j]-1))) 
+    temp_120sim_sd_equalVar <- sd(temp_120sim_equalVar)
+    temp_120sim_sd_unequalVar_o <- sd(temp_120sim_unequalVar_o)
+    temp_120sim_sd_unequalVar_p <- sd(temp_120sim_unequalVar_p)
+    # calculate welch's df for both equal and unequal var conditions
+    welch_df_equalVar[i] <- (temp_100sim_sd^2/n_vals[j] + temp_120sim_sd_equalVar^2/n_vals[j])^2/
+      (temp_100sim_sd^4/(n_vals[j]^2*(n_vals[j]-1)) + temp_120sim_sd_equalVar^4/(n_vals[j]^2*(n_vals[j]-1))) 
+    welch_df_unequalVar_o[i] <- (temp_100sim_sd^2/n_vals[j] + temp_120sim_sd_unequalVar_o^2/n_vals[j])^2/
+      (temp_100sim_sd^4/(n_vals[j]^2*(n_vals[j]-1)) + temp_120sim_sd_unequalVar_o^4/(n_vals[j]^2*(n_vals[j]-1))) 
+    welch_df_unequalVar_p[i] <- (temp_100sim_sd^2/n_vals[j] + temp_120sim_sd_unequalVar_p^2/n_vals[j])^2/
+      (temp_100sim_sd^4/(n_vals[j]^2*(n_vals[j]-1)) + temp_120sim_sd_unequalVar_p^4/(n_vals[j]^2*(n_vals[j]-1))) 
   }
   powers_z[j] <- mean(abs(test_statistic_equalVar)>qnorm(0.975)) # for z-test
   powers_t[j] <- mean(abs(test_statistic_equalVar)>qt(0.975, df = n_vals[j]-2)) # t-test
-  welch_df <- mean(welch_df)
-  powers_w[j] <- mean(abs(test_statistic_unequalVar)>qt(0.975, df = welch_df)) # welch's t-test
+  welch_df_equalVar <- mean(welch_df_equalVar)
+  welch_df_unequalVar_o <- mean(welch_df_unequalVar_o)
+  welch_df_unequalVar_p <- mean(welch_df_unequalVar_p)
+  powers_w_equalVar[j] <- mean(abs(test_statistic_equalVar)>qt(0.975, df = welch_df_equalVar)) # welch's t-test
+  powers_w_unequalVar_o[j] <- mean(abs(test_statistic_unequalVar_o)>qt(0.975, df = welch_df_unequalVar_o)) # welch's t-test
+  powers_w_unequalVar_p[j] <- mean(abs(test_statistic_unequalVar_p)>qt(0.975, df = welch_df_unequalVar_p)) # welch's t-test
 }
-results <- data.frame(n = rep(n_vals,3), 
+results <- data.frame(n = rep(n_vals,5), 
                       test_type = c(rep("Z-test", length(n_vals)),
-                                     rep("T-test", length(n_vals)),
-                                     rep("Welch's T-test", length(n_vals))),
-                      power = c(powers_z, powers_t, powers_w))
+                                    rep("T-test", length(n_vals)),
+                                    rep("Welch's T-test, Equal Var", length(n_vals)),
+                                    rep("Welch's T-test, Optimistic", length(n_vals)),
+                                    rep("Welch's T-test, Pessimistic", length(n_vals))),
+                      power = c(powers_z, powers_t, powers_w_equalVar, powers_w_unequalVar_o, powers_w_unequalVar_p))
 
-ideal_n_z <- max(results$n[which(results$power<=0.9 & results$test_type == "Z-test")])
-ideal_n_t <- max(results$n[which(results$power<=0.9 & results$test_type == "T-test")])
-ideal_n_w <- max(results$n[which(results$power<=0.9 & results$test_type == "Welch's T-test")])
+ideal_n_z <- min(results$n[which(results$power>=0.9 & results$test_type == "Z-test")])
+ideal_n_t <- min(results$n[which(results$power>=0.9 & results$test_type == "T-test")])
+ideal_n_w_equalVar <- min(results$n[which(results$power>=0.9 & results$test_type == "Welch's T-test, Equal Var")])
+ideal_n_w_unequalVar_o <- min(results$n[which(results$power>=0.9 & results$test_type == "Welch's T-test, Optimistic")])
+ideal_n_w_unequalVar_p <- min(results$n[which(results$power>=0.9 & results$test_type == "Welch's T-test, Pessimistic")])
 
 g <- ggplot(results, aes(x = n, y = power, color = test_type))
 g + geom_line() + 
-  scale_x_continuous(limits = c(10,50)) +
+  scale_x_continuous(limits = c(70,100)) +
+  scale_y_continuous(limits = c(0.8,0.97))+
   theme_bw() +
   geom_hline(yintercept = 0.9, col = "red", linetype = "dashed") +
   geom_vline(xintercept = ideal_n_z, col = "#619CFF", linetype = 3) +
   geom_vline(xintercept = ideal_n_t, col = "#F8766D", linetype = 3) +
-  geom_vline(xintercept = ideal_n_w, col = "#00BA38", linetype = 3) +
+  geom_vline(xintercept = ideal_n_w_equalVar, col = "#00BA38", linetype = 3) +
+  geom_vline(xintercept = ideal_n_w_unequalVar_o, col = "#00BFC4", linetype = 3) +
+  geom_vline(xintercept = ideal_n_w_unequalVar_p, col = "#00BFC4", linetype = 3) +
   labs(title = "Power by Sample Size and Test Type",
        x = "Sample Size",
        y = "Power") +
   scale_color_discrete(name = "Test Type")
-
-
-
-# power.t.test(delta = 75,
-#              sig.level = 0.05,
-#              sd = sd_100,
-#              power = 0.90,
-#              alternative = "two.sided",
-#              type = "two.sample",
-#              strict = TRUE)
-# 
-# power.welch.t.test(delta = 75,
-#                    sd1 = sd_100,
-#                    sd2 = sd_120,
-#                    sig.level = 0.05,
-#                    power = 0.90,
-#                    alternative = "two.sided",
-#                    strict = TRUE)
-
 ```
 
-The results of this power analysis show that the needed sample size is `r ideal_n` assuming we wanted to use the z-statistic to calculate power.  
+The results of this power analysis show that the needed sample size is `r ideal_n_z`, `r ideal_n_t`, `r ideal_n_w_equalVar`, `r ideal_n_w_unequalVar_o`, or `r ideal_n_w_unequalVar_p` depending on if we wanted to go with a Z-test, T-test, Welch's T-test with equal variance, Welch's T-test with the modeled optimistic variance, or Welch's T-test with the pessimistic temp = 50 variance, respectively. 
 
-We plan to conduct a simulation study to find a sample size suited for a power of 0.9 using the Welch t-test so that our test does not rely on equal variances. Additionally, this allows our sample sizes to vary if any errors occur in sampling as well.
-
-Then we would conduct a simulation study to assess the performance of the Welch t-test using simulated data from t distributions using the sample mean and variance of the 100 degrees data. We could also introduce variations to our sample sizes and variances to test the resilience of our experiment structure. The reliance would be evaluated by getting a balance between type one error probably (about 0.05) while maintaining the power above 0.9.
+Recommendation:
+Given that we don't truly know what variance to expect for the temp = 120 condition, the best we can do is speculate. While a linear model for variance may be reasonable, it could just as easily be the case that the relationship with temperature is non-linear.  If we had data from a variety of temperatures, we could have more confidence in selecting an appropriate variance.  However, lacking this data, we're taking the most conservative approach and assuming that the variance increases to the higher temp = 50 condition at temp = 120.  This results in an ideal n of `r ideal_n_w_unequalVar_p`.
 
 &nbsp;  
 
-
-Question 2
+## Question 2
 
 Data set: 'fev.csv'
 
@@ -151,14 +261,14 @@ ht: Height (inches)
 male: Sex (0=female, 1=male)
 smoke: Smoking Status (0=non-current smoker, 1=current smoker)
 
-
-&nbsp;  
-
-
-```{r question2.2Setup}
+```{r question2.2Setup, echo = FALSE}
 fevDat <- read.csv("../WEEK03/fev.csv")
 smokerDat <- fevDat[which(fevDat$smoke==1),]
 nonSmokerDat <- fevDat[which(fevDat$smoke==0),]
+mean_smoker <- mean(smokerDat$fev)
+mean_nonSmoker <- mean(nonSmokerDat$fev)
+sd_smoker <- sd(smokerDat$fev)
+sd_nonSmoker <- sd(nonSmokerDat$fev)
 ```
 
 &nbsp;  
@@ -166,32 +276,40 @@ nonSmokerDat <- fevDat[which(fevDat$smoke==0),]
 
 2.1. It is desired to conduct a test of the null hypothesis that mean FEV is the same in smokers and non-smokers. Conduct an appropriate simulation study to determine an appropriate hypothesis test procedure to use (consider only the 3 methods discussed in class).  Provide a description of your simuation study in words and provide a summary of the results of your simulation study. 
 
-&nbsp;  
+\newpage
 
 $H_0: \mu_A = \mu_B$ where A are smokers and B are non-smokers
 $H_1: \mu_A \neq \mu_B$
 
-In order to determine an appropriate hypothesis test procedure, we must consider how large the sample size is, 
+In order to determine an appropriate hypothesis test procedure, we must consider how large the sample size is and what the shapes of the distributions are:
 
-```{r question2.1}
-# N<-5000
-# set.seed(20190126)
-# n1<-30
-# n2<-15
-# n<-n1+n2
-# sim_data<-data.frame(temp=c(rep(50,n1),rep(100,n2)),output=rep(NA,n))
-# sim_result<- data.frame(p.equal.var=rep(NA,N),p.Welch=rep(NA,N),p.Z=rep(NA,N))
-# for(i in 1:N){
-#     sim_data$output<-rnorm(n,mean=1000,sd=c(rep(80,n1),rep(20,n2)))
-#     result<-with(sim_data,t.test(output[temp==50],output[temp==100],var.equal=T))
-#     sim_result[i,1]<-result$p.value
-#     result<-with(sim_data,t.test(output[temp==50],output[temp==100],var.equal=F))
-#     sim_result[i,2]<-result$p.value
-#     Z<-result$statistic
-#     sim_result[i,3]<-2*(1-pnorm(Z))
-# }
-# apply(sim_result<0.05,2,mean)
+```{r question2.1, echo = FALSE, fig.height=2.5}
+distribution_visualizer(smokerDat$fev, title = "Smoker FEV Histogram") #smokers
+distribution_visualizer(nonSmokerDat$fev, title = "Non-Smoker FEV Histogram") #non-smokers
 ```
+
+The smokers have a relatively-normal distribution with n = 65, mean = 3.3, and sd = 0.75 while the non-smokers have a left-skewed distribution with n = 589, mean = 2.6, and sd = 0.85. Given the degree of skewness with the non-smoker data, it's questionable to use any of the 3 methods discussed in class, but we'll procede with the best of the bunch, which is a Welch's t-test, given the uneven distribution. Below, a simulation is conducted to test the coverage of the proposed method as well as a standard t-test and z-test (just for comparison):
+
+```{r question2.1_part2, echo = FALSE, fig.height=2.5}
+N<-5000
+set.seed(20190127)
+n1<-nrow(smokerDat)
+n2<-nrow(nonSmokerDat)
+n<-n1+n2
+sim_data<-data.frame(condition=c(rep("smoker",n1),rep("non-smoker",n2)),output=rep(NA,n))
+sim_result<- data.frame(p.equal.var=rep(NA,N),p.Welch=rep(NA,N),p.Z=rep(NA,N))
+for(i in 1:N){
+    sim_data$output<-rnorm(n,mean=mean_smoker-mean_nonSmoker,sd=c(rep(sd_smoker,n1),rep(sd_nonSmoker,n2)))
+    result<-with(sim_data,t.test(output[condition=="smoker"],output[condition=="non-smoker"],var.equal=T))
+    sim_result[i,1]<-result$p.value
+    result<-with(sim_data,t.test(output[condition=="smoker"],output[condition=="non-smoker"],var.equal=F))
+    sim_result[i,2]<-result$p.value
+    Z<-result$statistic
+    sim_result[i,3]<-2*(1-pnorm(Z))
+}
+apply(sim_result<0.05,2,mean)
+```
+As can be seen, Welch's t-test performed the closest to expectation so we'll procede with that approach.
 
 &nbsp;  
 
@@ -201,8 +319,10 @@ In order to determine an appropriate hypothesis test procedure, we must consider
 
 
 ```{r question2.2}
+t.test(smokerDat$fev, nonSmokerDat$fev, alternative = "two.sided", var.equal = FALSE)
 
 ```
+Given the a p-val less than an alpha of 0.05, we reject the null hypothesis that there is no difference in mean FEV.  The confidence interval is 0.51 to 0.91.
 
 &nbsp;  
 
@@ -211,14 +331,24 @@ In order to determine an appropriate hypothesis test procedure, we must consider
 &nbsp;  
 
 
-```{r question2.3}
+```{r question2.3, echo = FALSE, fig.height=2.5}
+# subset to children 10 or older
+olderSmokerDat <- smokerDat[which(smokerDat$age>=10),]
+olderNonSmokerDat <- nonSmokerDat[which(nonSmokerDat$age>=10),]
+distribution_visualizer(olderSmokerDat$fev, title = "Age 10+ Smoker FEV Histogram")
+distribution_visualizer(olderNonSmokerDat$fev, title = "Age 10+ Non-smoker FEV Histogram")
 
+t.test(olderSmokerDat$fev, olderNonSmokerDat$fev, alternative = "two.sided", var.equal = FALSE)
 ```
+
+In this case, with a p-val of 0.155, we fail to reject the null hypothesis that there is a difference in mean FEV.  The cause for this difference is two-fold: the means are much closer together at 3.2 and 3.3 and the variance is higher due to a lower sample size with the age-subsetting.
 
 &nbsp;  
 
-Question 3
+## Question 3
 
 Read the paper "Why most published research findings are false." (see Week 3 folder). Do you agree with the overall conclusion of the paper that most published research findings are false? Provide your answer with your rationale in a paragraph of 200 words or less. (No simulation studies required here!)
+
+*Answer:* Based purely on this paper, I'm fine with accepting statement that most published research findings are false.  That said, I disagree with the general sentiment it provokes-that we can't trust scientific papers in general.  My understanding is that, by volume, most research is victim to the 6 corollaries he defines (i.e. small studies, small effect sizes, flexible experimental design etc.). As evidence of this, you can find a scientific paper to cite as evidence for nearly any crazy idea (including that vaccines don't work or that human-caused climate change is a myth).  So it's true that if I had to draw a random research finding from a hat, I'd bet against it being true.  That said, research that has been reprodicible and aggregated into meta-analyses with strong effect sizes are a subset of all research that I believe deserves our confidence. Ioannidis touches on this by stating that "Better powered evidence, e.g., large studies or low-bias meta-analyses, may help..." but he goes on to cast doubt regardless. 
 
 
