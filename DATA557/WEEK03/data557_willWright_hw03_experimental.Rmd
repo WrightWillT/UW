@@ -11,16 +11,71 @@ library(ggplot2)
 library(pwr)
 library(MKmisc)
 library(tidyr)
+library(dplyr)
+library(scales)
+library(ggthemes)
+library(qqplotr)
+library(gridExtra)
+
+
+# READ DATA
+
+# set up color palettes 
+colors <- ggthemes_data[["tableau"]][["color-palettes"]][["regular"]][[2]][[2]]
+
+distribution_visualizer <- function(
+      data, 
+      title = "Histogram and Density", 
+      x = "Values", 
+      binwidthInput = (max(data)-min(data))/15){
+  binwidthInput <- binwidthInput
+  binCounts <- .bincode(data, seq(0,max(data), binwidthInput))
+  xbar <- round(mean(data),1)
+  sd <- round(sd(data),1)
+  g <- ggplot(data.frame(data), aes(data)) +
+    geom_histogram(fill = colors[1],
+                   color = colors[2],
+                   binwidth = binwidthInput) +
+    geom_vline(aes(xintercept = mean(data)),
+               color = colors[3],
+               linetype = "dashed",
+               size = 0.7) +
+    geom_density(aes(y = binwidthInput * ..count..), 
+                 alpha = 0.2, 
+                 fill = colors[2],
+                 color = colors[1]) +
+    labs(title = title,
+         x = x,
+         y = "Frequency") +
+    annotate("text", 
+             x = mean(data)*1.25, 
+             y = max(binCounts, na.rm = TRUE)*0.75, 
+             label = paste0("Mean = ", xbar), # "x\u0305 = " for Windows
+             size = 3) +
+    theme_bw()  
+  
+  
+  p <- ggplot(data.frame(data), aes(sample = data)) +
+    stat_qq_band(color = colors[1], fill = colors[2]) +
+    stat_qq_line(color = colors[3], linetype = "dashed", size = 0.7) +
+    stat_qq_point(size = 0.8, alpha = 0.3) +
+    labs(title = "Q-Q Plot",
+         x = "Theoretical Values",
+         y = "Sample Values") +
+    theme_bw()
+  
+  grid.arrange(g, p, ncol = 2)
+}
 
 ```
 
-Instructions
+# Instructions
 
 Submit your solutions in pdf format to the dropbox on the canvas page by 5:00PM, Wednesday January 30. You do not need to include your R code with your solutions for this assignment.
 
 For question 1, you are to work in groups. For the other questions, you may work together to help each other solve problems, but you should do all the work, create your own solutions, and hand in your own work without copying others' work.
 
-Question 1. (This is Q3 of Exercise 3.)
+## Question 1. (This is Q3 of Exercise 3.)
 
 Suppose that a new experiment is being designed to determine the effect on output of temperatures higher than 100. In particular, the aim of the new experiment is to test the null hypothesis that the mean output is the same for temperature 100 and temperature 120. The researcher would like to have at least 90% power to detect a difference between these conditions in mean output equal to 75. Your job is to determine the sample sizes for each group and to decide which test statistic will be used to test the null hypothesis. Justify your answers.
 
@@ -29,26 +84,39 @@ For this question, you should continue to work with your group on the answer tha
 &nbsp;  
 
 
-```{r question1}
+## Question 1 Findings:
 
-# read file
+In our approach to this question, we first inspected the known experimental parameters to help determine which statistical test to use. In particular, we were interested in what we could learn about the distributions from the two samples of n=30 from the prior experiment for temperatures of 50 and 100.  
+
+```{r question1_ part1}
+# read file and set seed for reproducibility
 pDat <- read.csv("../WEEK03/process.csv")
-set.seed(999)
+set.seed(20190127)
 
-# calculate input parameters
-output_diff <- 75
-n_vals <- 1:100
-reps=1000
+# subset and calculate means and sds
+data_50 <- pDat$output[which(pDat$temp==50)]
+data_100 <- pDat$output[which(pDat$temp==100)]
+mean_50 <- mean(data_50)
+mean_100 <- mean(data_100)
+sd_50 <- sd(data_50)
+sd_100 <- sd(data_100)
+```
 
-# standard deviations
-sd_50 <- sd(pDat$output[which(pDat$temp==50)])
-sd_100 <- sd(pDat$output[which(pDat$temp==100)])
+The mean and standard deviation for the sample with a temperature of 50 are `r round(mean_50,2)` and `r round(sd_50,2)`.
+
+The mean and standard deviation for the sample with a temperature of 100 are `r round(mean_100,2)` and `r round(sd_100,2)`.
+
+Next, in order to estimate the standard deviation for a new sample with a temperature of 120, we used a linear model to extrapolate. Given more data or context about the machine where measurements are taken, we could likely make better assumptions about what standard deviation is reasonable. For instance, if we know that failures happen more frequently above 100 degrees, a linear model would not be appropriate.  That said, this approach seems reasonable given the situation.
+
+```{r question1_part2}
 # for temp = 120, use a linear model to estimate based on temp = 50 and temp = 100 data
 temps <- c(50,100)
 sds <- c(sd_50, sd_100)
 fit1 <- lm(sds ~ temps)
 sd_120 <- fit1$coefficients[1]+fit1$coefficients[2]*120 # linear model for est sd of temp = 120
 sdDat <- data.frame(temps = c(temps, 120), sds = c(sds,sd_120)) #append new datapoint
+
+# plot modeled SD for temp = 120
 p <- ggplot(sdDat, aes(x = temps, y = sds))
 p + geom_point() +
   geom_smooth(method = "lm", se = FALSE) +
@@ -59,6 +127,39 @@ p + geom_point() +
   scale_y_continuous(limits = c(50,200)) +
   scale_x_continuous(limits = c(30,150)) +
   annotate("text", 120, sd_120-15, label = paste0("Est SD of ",round(sd_120,2)))
+```
+
+Our model shows an estimated standard deviation of `r round(sd_120,2)`.
+
+
+Then, we inspected the distribution of residuals for the temp = 50 and temp = 100 cases to see if normality is a reasonable assumption:
+
+```{r question1_part3}
+# inspect residuals
+residuals_50 <- data_50 - mean_50
+residuals_100 <- data_100 - mean_100
+distribution_visualizer(residuals_50) 
+distribution_visualizer(residuals_100)
+```
+
+Based on these results, normality seems plausible, which satisfies the required assumption to move forward with the following simulations:
+
+To examine the relationship between sample sizes and power, we investigated 3 conditions:
+
+1. Assuming a completely normal distribution with equal variance using a Z-statistic
+
+2. Assuming a t-distribution with equal variance using a T-statistic
+
+3. Assuming a t-distribution with unequal variance using a T-statistic (Welch's T-test)
+
+
+Below, we simulated 1000 samples in each condition to get a mean power per each sample size from 1 to 100:
+
+```{r question1_part4}
+# calculate input parameters
+output_diff <- 75
+n_vals <- 1:100
+reps=1000
 
 # simulations
 powers_z <- rep(NA,length(n_vals))
@@ -69,13 +170,13 @@ for(j in 1:length(n_vals)){
   test_statistic_unequalVar <- rep(NA,reps)
   welch_df <- rep(NA,reps)
   for(i in 1:reps){
-    temp_100sim <- rnorm(n_vals[j], output_diff, sd_100)
-    temp_120sim_equalVar <- rnorm(n_vals[j], output_diff, sd_100)
-    temp_120sim_unequalVar <- rnorm(n_vals[j], output_diff, sd_120)
+    temp_100sim <- rnorm(n_vals[j], 75, sd_100)
+    temp_120sim_equalVar <- rnorm(n_vals[j], 0, sd_100)
+    temp_120sim_unequalVar <- rnorm(n_vals[j], 0, sd_120)
     se_equalVar <- sqrt(var(temp_100sim)/n_vals[j]+var(temp_120sim_equalVar)/n_vals[j])
     se_unequalVar <- sqrt(var(temp_100sim)/n_vals[j]+var(temp_120sim_unequalVar)/n_vals[j])
-    test_statistic_equalVar[i] <- (output_diff)/se_equalVar
-    test_statistic_unequalVar[i] <- (output_diff)/se_unequalVar
+    test_statistic_equalVar[i] <- abs(mean(temp_100sim)-mean(temp_120sim_equalVar))/se_equalVar
+    test_statistic_unequalVar[i] <- abs(mean(temp_100sim)-mean(temp_120sim_unequalVar))/se_unequalVar
     temp_100sim_sd <- sd(temp_100sim)
     temp_120sim_sd <- sd(temp_120sim_unequalVar)
     welch_df[i] <- (temp_100sim_sd^2/n_vals[j] + temp_120sim_sd^2/n_vals[j])^2/
@@ -92,13 +193,13 @@ results <- data.frame(n = rep(n_vals,3),
                                      rep("Welch's T-test", length(n_vals))),
                       power = c(powers_z, powers_t, powers_w))
 
-ideal_n_z <- max(results$n[which(results$power<=0.9 & results$test_type == "Z-test")])
-ideal_n_t <- max(results$n[which(results$power<=0.9 & results$test_type == "T-test")])
-ideal_n_w <- max(results$n[which(results$power<=0.9 & results$test_type == "Welch's T-test")])
+ideal_n_z <- min(results$n[which(results$power>=0.9 & results$test_type == "Z-test")])
+ideal_n_t <- min(results$n[which(results$power>=0.9 & results$test_type == "T-test")])
+ideal_n_w <- min(results$n[which(results$power>=0.9 & results$test_type == "Welch's T-test")])
 
 g <- ggplot(results, aes(x = n, y = power, color = test_type))
 g + geom_line() + 
-  scale_x_continuous(limits = c(10,50)) +
+  scale_x_continuous(limits = c(1,100)) +
   theme_bw() +
   geom_hline(yintercept = 0.9, col = "red", linetype = "dashed") +
   geom_vline(xintercept = ideal_n_z, col = "#619CFF", linetype = 3) +
@@ -108,37 +209,18 @@ g + geom_line() +
        x = "Sample Size",
        y = "Power") +
   scale_color_discrete(name = "Test Type")
-
-
-
-# power.t.test(delta = 75,
-#              sig.level = 0.05,
-#              sd = sd_100,
-#              power = 0.90,
-#              alternative = "two.sided",
-#              type = "two.sample",
-#              strict = TRUE)
-# 
-# power.welch.t.test(delta = 75,
-#                    sd1 = sd_100,
-#                    sd2 = sd_120,
-#                    sig.level = 0.05,
-#                    power = 0.90,
-#                    alternative = "two.sided",
-#                    strict = TRUE)
-
 ```
 
-The results of this power analysis show that the needed sample size is `r ideal_n` assuming we wanted to use the z-statistic to calculate power.  
+The results of this power analysis show that the needed sample size is `r ideal_n_z`, `r ideal_n_t`, or `r ideal_n_w` depending on if we wanted to go with a Z-test, T-test, or Welch's T-test, respectively. 
 
-We plan to conduct a simulation study to find a sample size suited for a power of 0.9 using the Welch t-test so that our test does not rely on equal variances. Additionally, this allows our sample sizes to vary if any errors occur in sampling as well.
+Recommendation:
+We ruled out the Z-test even before we started since it's the approach with the most assumptions (normality, equal variance, and a sufficiently large sample). Between the T-test and Welch's T-test, we ultimately sided with the sample size of `r ideal_n_t` via the results from the T-test simulation with the assumption of equal variance. While it is likely the case that the smaller standard deviation for a temperature of 120 is true given our linear model and we could therefore use a Welch's T-test, we'd prefer to take a more conservative approach and assume the standard deviation is equal to the higher standard deviation at temp = 100. 
 
-Then we would conduct a simulation study to assess the performance of the Welch t-test using simulated data from t distributions using the sample mean and variance of the 100 degrees data. We could also introduce variations to our sample sizes and variances to test the resilience of our experiment structure. The reliance would be evaluated by getting a balance between type one error probably (about 0.05) while maintaining the power above 0.9.
 
 &nbsp;  
 
 
-Question 2
+## Question 2
 
 Data set: 'fev.csv'
 
@@ -217,8 +299,10 @@ In order to determine an appropriate hypothesis test procedure, we must consider
 
 &nbsp;  
 
-Question 3
+## Question 3
 
 Read the paper "Why most published research findings are false." (see Week 3 folder). Do you agree with the overall conclusion of the paper that most published research findings are false? Provide your answer with your rationale in a paragraph of 200 words or less. (No simulation studies required here!)
+
+Based purely on this paper, I'm fine with accepting statement that most published research findings are false.  That said, I disagree with the general sentiment it provokes-that we can't trust scientific papers in general.  My understanding is that, by volume, most research is victim to the 6 corollaries he defines (i.e. small studies, small effect sizes, flexible experimental design etc.). As evidence of this, you can find a scientific paper to cite as evidence for nearly any crazy idea (including that vaccines don't work or that human-caused climate change is a myth).  So it's true that if I had to draw a random research finding from a hat, I'd bet against it being true.  That said, research that has been reprodicible and aggregated into meta-analyses with strong effect sizes are a subset of all research that I believe deserves our confidence. Ioannidis touches on this by stating that "Better powered evidence, e.g., large studies or low-bias meta-analyses, may help..." but he goes on to cast doubt regardless.  
 
 
