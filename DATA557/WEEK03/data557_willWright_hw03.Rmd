@@ -82,7 +82,7 @@ For this question, you should continue to work with your group on the answer tha
 
 *Team:* Tara Wilson, Lauren Heintz, Ben Bordeur Mathieu, and Will Wright
 
-**Summary:** We started by confirming the relative nomality of the residual distributions. Without knowing the variance of the temp = 120 condition, we tested several possibilities.  Ultimately, we recommend the most conservative option of n = 92 via a Welch's t-test simulation with unequal variance where we assume the variance of the temp = 120 condition is equal to the higher variance of the temp = 50 condition.  
+**Summary:** We started by confirming the relative nomality of the residual distributions. Without knowing the variance of the temp = 120 condition, we tested several possibilities.  Ultimately, we recommend the most conservative option of n = 92 via a Welch's t-test simulation with unequal variance where we assume the variance of the temp = 120 condition is equal to the higher variance of the temp = 50 condition.  The justification for this choice is that the Welch t-test allows for different variances and sample sizes between the two samples. We assumed a variety of variances for testing, but the real variance is still an unknown. Without having this information, we took a conservative estimate with our recommendation. The Welch model also provides some flexibility in the event there are sampling errors and we need to discard any data points.
 
 **Details:** In our approach to this question, we first inspected the known experimental parameters to help determine which statistical test to use. In particular, we were interested in what we could learn about the distributions from the two samples of n=30 from the prior experiment for temperatures of 50 and 100.  
 
@@ -276,7 +276,7 @@ sd_nonSmoker <- sd(nonSmokerDat$fev)
 
 2.1. It is desired to conduct a test of the null hypothesis that mean FEV is the same in smokers and non-smokers. Conduct an appropriate simulation study to determine an appropriate hypothesis test procedure to use (consider only the 3 methods discussed in class).  Provide a description of your simuation study in words and provide a summary of the results of your simulation study. 
 
-\newpage
+&nbsp;  
 
 $H_0: \mu_A = \mu_B$ where A are smokers and B are non-smokers
 $H_1: \mu_A \neq \mu_B$
