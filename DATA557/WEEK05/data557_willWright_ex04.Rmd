@@ -1,0 +1,187 @@
+---
+title: "Exercise 4"
+author: "Will Wright"
+date: "2/6/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+defectsData <- read.csv("defects.csv")
+
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(scales)
+library(ggthemes)
+library(qqplotr)
+library(gridExtra)
+
+colors <- ggthemes_data[["tableau"]][["color-palettes"]][["regular"]][[2]][[2]]
+
+distribution_visualizer <- function(
+      data, 
+      title = "Histogram and Density", 
+      x = "Values", 
+      binwidthInput = (max(data)-min(data))/15){
+  binwidthInput <- binwidthInput
+  binCounts <- .bincode(data, seq(0,max(data), binwidthInput))
+  xbar <- round(mean(data),1)
+  sd <- round(sd(data),1)
+  g <- ggplot(data.frame(data), aes(data)) +
+    geom_histogram(fill = colors[1],
+                   color = colors[2],
+                   binwidth = binwidthInput) +
+    geom_vline(aes(xintercept = mean(data)),
+               color = colors[3],
+               linetype = "dashed",
+               size = 0.7) +
+    geom_density(aes(y = binwidthInput * ..count..), 
+                 alpha = 0.2, 
+                 fill = colors[2],
+                 color = colors[1]) +
+    labs(title = title,
+         x = x,
+         y = "Frequency") +
+    annotate("text", 
+             x = mean(data)*1.25, 
+             y = max(binCounts, na.rm = TRUE)*0.75, 
+             label = paste0("Mean = ", xbar), # "x\u0305 = " for Windows
+             size = 3) +
+    theme_bw()  
+  
+  
+  p <- ggplot(data.frame(data), aes(sample = data)) +
+    stat_qq_band(color = colors[1], fill = colors[2]) +
+    stat_qq_line(color = colors[3], linetype = "dashed", size = 0.7) +
+    stat_qq_point(size = 0.8, alpha = 0.3) +
+    labs(title = "Q-Q Plot",
+         x = "Theoretical Values",
+         y = "Sample Values") +
+    theme_bw()
+  
+  grid.arrange(g, p, ncol = 2)
+}
+
+```
+
+Applied Statistics and Design of Experiments
+Exercise 4
+February 6, 2018
+
+For these exercises you should work in groups of 3-5 students. Part of homework 5 will involve working with your group to refine and extend your answers to some of these questions.
+
+Data set: ‘defects.csv’
+
+The data are from an experiment to compare 4 processing methods for manufacturing steel ball bearings. The 4 process methods were run for one day and a random sample of 1% of the ball bearings from the day was taken from each of the 4 methods. Because the processes produce ball bearings at different rates the sample sizes were not the same for the 4 methods. Each sampled ball bearing had its weight measured to the nearest 0.1 g and the number of surface defects was counted. The variables in the data set are:
+
+Sample: sample number
+Method: A, B, C, or D
+Defects: number of defects
+Weight: weight in g
+
+Question 1.
+
+The target weight for the ball bearings is 10 g. For each of the 4 methods test the null hypothesis that the mean weight is equal to 10. Considering the possibility of inflation of type I error rate due to multiple testing, what do you conclude from these results?
+
+Perform all pairwise comparisons of mean weight for the different methods. Report the p-values from all tests. Considering the possibility of inflation of type I error rate due to multiple testing, what conclusions would you draw from these results? 
+
+```{r q1}
+t.test(defectsData$Weight[which(defectsData$Method=="A")], alternative = "two.sided", mu = 10)
+t.test(defectsData$Weight[which(defectsData$Method=="B")], alternative = "two.sided", mu = 10)
+t.test(defectsData$Weight[which(defectsData$Method=="C")], alternative = "two.sided", mu = 10)
+t.test(defectsData$Weight[which(defectsData$Method=="D")], alternative = "two.sided", mu = 10)
+
+t.test(defectsData$Weight[which(defectsData$Method=="A")], 
+       defectsData$Weight[which(defectsData$Method=="B")],
+       alternative = "two.sided")
+t.test(defectsData$Weight[which(defectsData$Method=="A")], 
+       defectsData$Weight[which(defectsData$Method=="C")],
+       alternative = "two.sided")
+t.test(defectsData$Weight[which(defectsData$Method=="A")], 
+       defectsData$Weight[which(defectsData$Method=="D")],
+       alternative = "two.sided")
+t.test(defectsData$Weight[which(defectsData$Method=="B")], 
+       defectsData$Weight[which(defectsData$Method=="C")],
+       alternative = "two.sided")
+t.test(defectsData$Weight[which(defectsData$Method=="B")], 
+       defectsData$Weight[which(defectsData$Method=="D")],
+       alternative = "two.sided")
+t.test(defectsData$Weight[which(defectsData$Method=="C")], 
+       defectsData$Weight[which(defectsData$Method=="D")],
+       alternative = "two.sided")
+
+```
+
+The results of testing that each of the methods is not equal to 10 shows that only D is not equal to 10. 
+
+The results of testing each method to each other method shows that there is a significant difference in mean weight between B and D.  If, however, we apply the Bonferonni principle, then the alpha goes from 0.05 to 0.05/6=0.00833 and the difference becomes insignifant. 
+
+
+Question 2
+
+Compare the mean weights for the 4 methods using ANOVA. What is your conclusion? How does it compare to the conclusions from the pairwise comparisons?
+
+```{r q2}
+summary(aov(Weight ~ Method, defectsData))
+```
+
+ANOVA shows that we'd fail to reject the null hypothesis of no difference in means between the methods.  This is different than the answer in 1 because we're answering a different question.  In 1, we were concerned with differences between the method's mean and 10 as well as the differences between each set of methods' means. Here, however, we're answering the question "is there a difference in means between all methods".
+
+Question 3
+
+Assess the assumptions of the ANOVA. Are the assumptions met?
+
+```{r question3}
+distribution_visualizer(defectsData$Weight[which(defectsData$Method=="A")]-
+                          mean(defectsData$Weight[which(defectsData$Method=="A")]), "A Method Weight Residuals")
+distribution_visualizer(defectsData$Weight[which(defectsData$Method=="B")]-
+                          mean(defectsData$Weight[which(defectsData$Method=="B")]), "B Method Weight Residuals")
+distribution_visualizer(defectsData$Weight[which(defectsData$Method=="C")]-
+                          mean(defectsData$Weight[which(defectsData$Method=="C")]), "C Method Weight Residuals")
+distribution_visualizer(defectsData$Weight[which(defectsData$Method=="D")]-
+                          mean(defectsData$Weight[which(defectsData$Method=="D")]), "D Method Weight Residuals")
+
+var(defectsData$Weight[which(defectsData$Method=="A")])
+var(defectsData$Weight[which(defectsData$Method=="B")])
+var(defectsData$Weight[which(defectsData$Method=="C")])
+var(defectsData$Weight[which(defectsData$Method=="D")])
+```
+
+For the assumption of normality, B seems slightly non-normal and skews left, but they seem somewhat normal overall.  
+
+For the assumption of equal variances, we can see that they are fairly different, ranging from 0.085 to 0.340.
+
+For the assumption of independence, this seems to be met since random sampling was used.
+
+Question 4
+
+Perform a simulation study to assess the validity of the ANOVA. Choose distributions for weight that seem to be reasonable based on your analysis of the data. Report the estimated type I error rate of the ANOVA F-test.
+
+```{r question4}
+set.seed(0192)
+xbar <- mean(defectsData$Weight)
+sd1 <- sd(defectsData$Weight[which(defectsData$Method=="A")])
+sd2 <- sd(defectsData$Weight[which(defectsData$Method=="B")])
+sd3 <- sd(defectsData$Weight[which(defectsData$Method=="C")])
+sd4 <- sd(defectsData$Weight[which(defectsData$Method=="D")])
+n <- nrow(defectsData)
+reps <- 1000
+p_vals <- rep(NA,reps)
+for(i in 1:reps){
+  sample1 <- rnorm(n, xbar, sd1)
+  sample2 <- rnorm(n, xbar, sd2)
+  sample3 <- rnorm(n, xbar, sd3)
+  sample4 <- rnorm(n, xbar, sd4)
+  
+  sample_df <- data.frame(data = c(sample1,sample2,sample3,sample4), 
+                          method = c(rep("A",n), rep("B",n), rep("C",n), rep("D",n)))
+  
+  p <- summary(aov(data ~ method, sample_df))[[1]][[5]][[1]]
+  p_vals[i] <- p
+}
+mean(p_vals<0.05)
+
+```
+
+Given that we're pretty close to 0.05, ANOVA seems valid.
