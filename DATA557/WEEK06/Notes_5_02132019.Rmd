@@ -1,0 +1,927 @@
+---
+title: "Session 5 - Linear Regression and ANOVA"
+author: "Brian Leroux"
+date: "Wednesday, February 13, 2019"
+output: beamer_presentation
+fontsize: 9pt
+---
+
+# Outline
+
+The focus for this lecture will be on the use and interpretation of linear regression models.
+Next week we will examine more of the theory behind regression including how the computations are done.
+
+1. Linear Regression
+
+2. Regression and ANOVA with Two or More Factors
+
+# 1. Linear Regression
+
+- The linear regression model
+- Interpretation of parameters in regression models
+- Relationship between linear regression, t-tests and ANOVA
+- Relationship between regression and correlation
+- Correlation vs causation
+- All models are wrong
+- Dangers of extrapolation
+
+# Example: Dose-Response in the Tooth-Growth Experiment
+
+### The Effect of Vitamin C on Tooth Growth in Guinea Pigs
+
+Data: ToothGrowth (built-in R dataset)
+
+The response is the length of odontoblasts (cells responsible for tooth growth) in 60 guinea pigs. Each animal received one of three dose levels of vitamin C (0.5, 1, and 2 mg/day) by one of two delivery methods, (orange juice or ascorbic acid (a form of vitamin C and coded as VC).
+
+The variables are
+
+__len__		Tooth (odontoblast) length
+
+__supp__	Supplement type (VC or OJ)
+
+__dose__	Dose (mg/day)
+
+# A 2-factor experiment
+
+In the tooth-growth experiment (data 'ToothGrowth'), there are 2 experimental factors:
+
+1. Delivery method: orange juice (OJ) or ascorbic acid (VC)
+2. Dose of vitamin C: 0.5, 1, or 2 mg/day
+All 6 combinations of the 2 factors were used:
+
+```{r,echo=F,comment=""}
+attach(ToothGrowth)
+n=table(supp,dose)
+n
+```
+
+For now we will consider only the dose factor and we will conduct separate analyses for
+each delivery method.
+
+# Length vs dose for the OJ group
+
+```{r,echo=F}
+oj=ToothGrowth[ToothGrowth$supp=="OJ",]
+```
+
+```{r,echo=F,fig.height=4.5,fig.width=5}
+plot(len ~ dose, data=oj, ylim=c(0,35))
+abline(lm(len ~ dose, data=oj))
+```
+
+# The Fitted Regression Line
+
+The fitted line was obtained using _least-squares_ (LS) regression.
+In R this is done with the 'lm' function. (We will see how this is done next week.)
+
+```{r,comment=""}
+lm(len ~ dose,data=oj)
+```
+
+The equation of the fitted line is 
+$$
+\mbox{len} = 11.550 + 7.811 \times \mbox{dose}
+$$
+
+
+
+# The Linear Regression Model
+
+Linear regression is based on an underlying statistical model
+$$
+E[Y | X = x]=\alpha + \beta x,
+$$
+where
+
+$Y$ is the _response_ variable (also called "outcome", "dependent variable")
+
+$X$ is the _predictor_ variable (also called "explanatory" or "independent" variable)
+
+$\alpha$ is the _intercept_
+
+$\beta$ is the _regression coefficient_ for $X$
+
+This model says that the conditional expectation of $Y$ given $X$ is a linear fuction of $X$. It is sometimes written as $E[Y]=\alpha + \beta X$.
+
+Another form of the model that is used sometimes is:
+$$
+Y =\alpha + \beta x + \epsilon,
+$$
+where $\epsilon$ represents the "error", assumed to have mean 0.
+
+# Interpretation of the parameters
+
+The interpretation of $\alpha$ is the mean of $Y$ given $X=0$, i.e.,
+$\mbox{E}(Y | X=0) = \alpha + \beta \times 0 = \alpha$. This is the point where the regression line crosses the $y$-axis.
+
+The interpretation of $\beta$ is the average _difference_ in the mean of $Y$ per unit _difference_ in $X$.
+
+Sometimes this is expressed as the average difference in $Y$ corresponding to a 1-unit difference in $X$, i.e.,
+$$
+\mbox{E}(Y | X=x+1)-\mbox{E}(Y | X=x) = \alpha+\beta (x+1) - (\alpha+\beta x) = \beta.
+$$
+
+For a given data set, the fitted regression model is written as
+$\mbox{E}(Y) = \hat\alpha + \hat\beta X$, where
+$\hat\alpha$ is the point where the fitted regression line crosses the y-axis
+and $\hat\beta$ is the slope of the fitted regression line.
+
+# Interpretation of the estimate of the intercept
+
+The estimated intercept $\hat\alpha$ is an estimate of the mean response for $X=0$.
+
+```{r,echo=F,fig.height=4.5,fig.width=5}
+plot(len ~ dose, data=oj, xlim=c(0,2),ylim=c(0,35))
+abline(lm(len ~ dose, data=oj))
+abline(v=0,lty=2)
+points(0,11.55,pch=1,cex=3,col=2)
+```
+
+# Interpretation of the estimate of the regression coefficient
+
+$\hat\beta$ is the slope of the regression line, i.e., "rise over run"
+
+```{r,echo=F,fig.height=3.5,fig.width=3.5,dev.args=list(pointsize=10)}
+plot(len ~ dose, data=oj,ylim=c(0,35),xlim=c(0.5,2.25),type="n")
+abline(lm(len ~ dose, data=oj),lwd=2,col="gray")
+lines(c(1,2),c(11.55+7.881,11.55+7.881),lty=3,lwd=2,col=4)
+lines(c(2,2),c(11.55+7.881,11.55+2*7.881),lty=3,lwd=2,col=4)
+text(1.5,18,"Run")
+text(2.15,23,"Rise")
+text(1,30,"Slope = Rise/Run")
+```
+
+# Interpretation of the parameters for the OJ data
+
+$\hat\alpha = 11.55$ is the estimated mean tooth length if the vitamin C dose is set to 0.
+
+$\hat\beta = 7.881$ is the estimated average difference in tooth length per unit difference in vitamin C dose.
+
+# Linear regression for the "VC" group
+
+Fitted regression line:
+
+> len = 3.295 + 11.716
+
+```{r,echo=F,fig.height=4.5,fig.width=5}
+vc=ToothGrowth[ToothGrowth$supp=="VC",]
+plot(len ~ dose, data=vc, ylim=c(0,35))
+abline(lm(len ~ dose, data=vc))
+lm(len~dose,data=vc)
+```
+
+# Testing hypotheses about regression coefficients
+
+In regression, typically the null hypothesis of interest is $H_0:\beta=0$, because this represents the hypothesis that the mean response is the same for any value of the predictor variable, i.e., there is no effect of $X$ on $Y$.
+
+The test statistic is calculated using the formula
+$Z=$Estimate/SE(Estimate). This is sometimes called a "t-statistic" because it has the same general form as the t-test statistic.
+Statistical significance is determined using a $t$-distribution with $n-2$ degrees of freedom.
+(We will see this in more detail, including how to calculate the SE, next week.)
+
+The subtraction of 2 represents the two parameters estimated ($\alpha$ and $\beta$) to fit the regression line.
+
+For the OJ group, we get $Z=7.8114/1.3017=6.0011$. The p-value is the 2-sided tail probability for the $t_{28}$ distribution.
+```{r,comment=""}
+2*(1-pt(6.0011,df=28))
+```
+
+---
+
+\small
+OJ group:
+```{r,echo=F,comment=""}
+summary(lm(len~dose,data=oj))$coef
+```
+
+VC group:
+```{r,echo=F,comment=""}
+summary(lm(len~dose,data=vc))$coef
+```
+
+Note: p-values this small are typically reported as p < 0.001 or p < 0.0001.
+
+# The relationship between regression and ANOVA
+
+We can also apply ANOVA to test the significance of dose. The difference is that with ANOVA we are fitting a separate mean value to each of the three dose groups, rather than assuming a straight-line relationship.
+
+```{r,comment=""}
+summary(aov(len ~ factor(dose), data=oj))
+```
+
+The null hypothesis being tested by the $F$-statistic in this case is
+$H_0:\mu_1=\mu_2=\mu_3$, where $\mu_1$, $\mu_2$, and $\mu_3$ represent the mean
+response in each of the three dose groups. Again, there is strong evidence against the null hypothesis. But note that the p-values for ANOVA and linear regression are different.
+
+# Regression versus ANOVA
+
+For ANOVA, dose is treated as a 'factor' (i.e., categorical) variable, whereas for regression dose is treated as a quantitative variable. However,
+the __null hypotheses__ for ANOVA and regression are equivalent: they both imply that the mean response does not depend on dose. It is just expressed differently for regression ($\beta=0$) than for ANOVA ($H_0:\mu_1=\mu_2=\mu_3$).
+
+For the OJ data, the conclusions are similar for ANOVA and regression: both methods provide evidence against the null hypothesis. Thus, with either method we would conclude that there is an effect of dose on tooth length. 
+
+ANOVA and regression will not always agree in this way. Note that in this example, the p-values are not the same for the two methods (approximately $10^{-6}$ for regression versus $10^{-8}$ for ANOVA).
+
+# Regression or ANOVA?
+
+In practice, the choice of method will be based on what type of __alternative__ hypotheses we are interested in detecting.
+
+If we believe there is an _approximate_ linear dose-response relationship between $X$ and $Y$ then regression is more appropriate because it will tend to have higher power to detect this relationship than ANOVA.
+Note that the assumption of linearity does not have to hold exactly (it rarely if ever does) in order to apply linear regression.
+
+However, if we have no reason to suspect the relationship to be close to linear (e.g., if we expect a non-monotone relationship), then ANOVA is the best approach.
+
+# Regression versus ANOVA for comparing 2 groups
+
+There is one special case in which regression and ANOVA give the exact same results: the comparison of two groups. As an illustration, consider the comparison of the dose-1 and dose-2 groups in the OJ data.
+
+\small
+```{r,comment=""}
+summary(lm(len ~ dose, data=oj,subset=(dose >= 1)))$coef
+summary(aov(len ~ factor(dose), data=oj, subset=(dose >= 1)))
+```
+
+The results are the same (except for differences in rounding).
+
+# Regression versus the equal-variance t-test for comparing 2 groups
+
+\small
+With only two values of the dose variable, linearity does not constrain the model in any way (hence regression and ANOVA are the same).
+In this case, the equal-variance t-test would also give the same result.
+
+\small
+```{r,comment=""}
+summary(lm(len ~ dose, data=oj, subset=(dose >= 1)))$coef
+t.test(oj$len[oj$dose==1],oj$len[oj$dose==2],var.equal=T)
+```
+
+The p-values from regression and the equal-variance t-test are the same.
+Also, the estimated coefficient for dose (3.36) is equal to the
+difference between the group means (26.06 - 22.70).
+
+# Comparison of regression, ANOVA and the equal-variance t-test
+
+For comparison of 2 group means:
+
+> The equal-variance two-sample t-test, ANOVA, and linear regression are equivalent.
+
+For comparison of 3 or more group means:
+
+> ANOVA and linear regression can give different results
+
+
+# Other regression analysis output
+
+```{r,echo=T,comment=""}
+summary(lm(len ~ dose, data=oj))
+```
+
+# Residuals, Residual Standard Error, R-squared, and the F-test
+
+Residuals are used for checking assumptions (next week).
+
+"Residual standard error" is an estimate of the SD of the data points around the regression line
+(SD of the error term in the regression model).
+
+"Multiple R-squared" is a measure of how much variation in the response is explained by the model. (For this model, it is just the square of the correlation.)
+
+"Adjusted R-squared" is an adjusted value of R-squared based on the number of parameters in the model. It is used in model selection (other model selection methods we will see include AIC, BIC, and cross-validation).
+
+The F-test for this model is equivalent to the t-statistic for $\beta$ (note that $F=t^2$ and the p-values agree).
+
+# Correlation
+
+The Pearson correlation coefficient is a measure of the strength of _linear_ association between two variables.
+The formula is
+$$
+r=\frac{\sum_i (X_i-\bar X)(Y_i - \bar(Y))}{ \sqrt{\sum_i (X_i-\bar X)^2\sum_i(Y_i-\bar Y)^2}}
+$$
+
+It is a measure between -1 and 1 which is interpreted as follows:
+
+$r=0$: there is no _linear_ association between $X$ and $Y$
+
+$r > 0$: there is a positive linear association between $X$ and $Y$
+
+$r < 0$: there is a negative linear association between $X$ and $Y$
+
+# Correlation versus regression
+
+Linear regression and correlation are closely related.
+The Pearson correlation coefficient is a measure of how
+well the data points in a scatterplot follow a straight line.
+The least-squares regression line is the line in question.
+
+Example: speed vs stopping distance of cars (R dataset 'cars').
+
+\small
+```{r,fig.height=3,fig.width=3,dev.args=list(pointsize=8)}
+plot(dist ~ speed, data=cars)
+```
+
+# Regression versus correlation for the 'cars' data
+
+\small
+```{r,comment=""}
+cor(cars$dist,cars$speed)
+summary(lm(dist ~ speed,data=cars))
+```
+
+---
+
+The correlation between distance and speed is $r= 0.807$. 
+
+The square of the correlation is equal to the $R^2$ value from the regression:
+$r^2=0.807^2=0.651=R^2$.
+
+For simple linear regression models, the R-squared is just the square of the Pearson
+correlation coefficient. For models with more than 1 predictor R-squared has an interpretation
+in terms of correlation between observed and fitted values and also as a percentage
+of variance explained by the model (we will come back to this in the context of prediction).
+
+# Equivalence of hypothesis testing for correlation and regression
+
+Testing a null hypothesis of 0 correlation is equivalent to testing the null hypothesis of 0 for the linear regression coefficient.
+
+If we let $\rho$ denote the population value of the correlation then
+$H_0:\rho=0$ is equivalent to $H_0:\beta=0$.
+
+The usual assumptions apply to testing $H_0:\rho=0$ as for linear regression:
+independent observations, constant variance, normality or large sample size.
+
+Note: the Spearman correlation coefficient is a correlation based on the ranks of the data. It is
+sometimes (but not often) used in place of the Pearson correlation coefficient when assumptions are in question.
+
+# Misinterpretation of 0 correlation 
+
+One danger with interpretation of a correlation is that a 0 correlation may be interpreted as implying no association between the two variables. However, this interpretation implicitly assumes linearity. The correlation coefficient only assesses _linear_ associations and can completely miss a non-linear association.
+
+```{r,echo=F,fig.height=3,fig.width=3,dev.args=list(pointsize=8)}
+x=(-10):10
+d=data.frame(x,y=0.2*x^2)
+plot(y ~ x, data=d,main="r = 0!")
+abline(lm(y ~ x, data=d))
+```
+
+# Regression analysis of observational studies
+
+The tooth growth experiment used randomization of the experimental units (guinea pigs).
+Animals were
+randomly assigned to receive a dose of vitamin C and one of the supplement types.
+As another example, in the NPK experiment the plots
+of land were randomly assigned to one of four combinations of N, P, and K within each block.
+
+An _observational_ study is one which does not involve random assignment to experimental conditions. Instead,
+observations are made on naturally occurring processes
+(it is also called a "natural history" study). 
+In an observational study we need to be more careful about interpretation of results. In general, we cannot make inferences about causal effects, but rather only about associations between variables. This is sometimes expressed by the saying that "correlation is not causation", i.e., just because two variables are correlated does not mean one has a causal effect on the other.
+
+# Correlation is not causation
+
+\includegraphics[width=4in,height=4in]{chocolate-and-nobel-prizes.pdf}
+
+# The dangers of extrapolation
+
+Another potential pit-fall with regression is extrapolation.
+The linearity assumption can get us into big trouble if we use it to extrapolate beyond the range of the data.
+
+For example, it would be dangerous to use the results from the tooth-growth data to extrapolate to much higher doses of vitamin C than were used in the experiment. 
+
+Such extrapolations are only valid when the linear relationship is true for the entire range of the predictor variable.
+
+Here's an example of what can happen if we take our model too seriously...
+
+# A momentous sprint!
+
+\includegraphics[width=6in,height=6in]{Momentous_Sprint.pdf}
+
+# Extrapolating to 0
+
+Recall that the intercept $\alpha$ is the mean response corresponding to $X=0$.
+If 0 is not in the range of the values of $X$ in the data then this involves extrapolation. As a result it can be dangerous to interpret the intercept too literally. For the cars data, the model tells us that the stopping distance for a car travelling 0 mph is -18 ft!
+
+```{r,echo=F,fig.height=3,fig.width=3,dev.args=list(pointsize=8)}
+plot(dist ~ speed, data=cars, xlim=c(0,max(cars$speed)),ylim=c(-20,max(cars$dist)))
+abline(lm(dist ~ speed, data=cars))
+```
+
+
+# All Models are Wrong!
+
+There is a basic tenet of statistics that models in general should not be interpreted strictly, i.e., that we should never believe our models are correct. 
+
+> All models are wrong - some are useful.... George E.P. Box
+
+The statistician George Box meant it literally when he said "all models are wrong". What matters is
+_how wrong_ they are.
+
+> Since all models are wrong the scientist cannot obtain a "correct" one by excessive elaboration. ... ... ... Since all models are wrong the scientist must be alert to what is importantly wrong.
+\footnote{Science and statistics, by GEP Box, J. Amer. Stat. Assoc., 76(356):791-799, 1976.}
+
+
+# Example of regression analysis of observational data
+
+Data on a sample of house sales in Seattle in 2015-16 ("Sales.csv")
+
+```{r,echo=F,fig.height=7,fig.width=8}
+d=read.csv("Sales.csv")
+d$price=d$LAST_SALE_PRICE
+plot(price ~ SQFT,data=d,ylab="Sale Price ($)",cex=0.5,col="gray")
+abline(lm(price ~ SQFT,data=d),col=4)
+```
+
+---
+
+\small
+```{r,echo=F,comment=""}
+summary(lm(price ~ SQFT,data=d))$coef
+```
+
+Interpretation: 
+$$
+E[\mbox{Price}]=-13,575 +340.4X,
+$$
+where $X$ is the square-footage of the house.
+The interpretation of the slope is _the average difference in price per unit difference in square-feet_ or _the average difference in price per square foot_.
+
+Note: the intercept of $-13,575$ is interpreted as the estimated sale price of a house with 0 square-feet.
+This is another example of how extrapolation to 0 can be difficult to interpret.
+
+# Regression through the origin
+
+In this example, it makes sense to force the intercept to be 0.
+This is called regression through the origin because the fitted
+regression line goes through the origin (0,0).
+
+\small
+```{r,echo=F,comment=""}
+summary(lm(price ~ -1 + SQFT,data=d))$coef
+```
+
+In this model the average difference in price is $335.20$ per square foot,
+which is close to the slope in the previous model but not identical.
+The slopes in the two models have different interpretations: the
+no-intercept model says that average price is proportional to square-feet, i.e., $E[\mbox{Price}]=335.2X$. Intuitively, this makes sense and allows a literal interpretation as: _the price of a house is $335.20$ per square foot_. The fitted line goes through the origin, i.e., the point $(0,0)$. Note that the slope is very close to the previous one because the intercept was very small (relative to the scale of the response).
+
+
+# 2. Regression and ANOVA with 2 or More Factors
+
+- 2-way ANOVA
+- Interactions
+- Regression analysis with interactions
+- The overall F-test
+
+# The Tooth-Growth Experiment: Factorial Design
+
+We call this a _factorial design_. The factors "supp" and "dose" are called __crossed__ because we ``cross`` each level of supp with each level of dose.\footnote{Later we will contrast this with ``nested`` factors.}
+
+The experimental units (guinea pigs) were randomly assigned to the treatment groups at random, with 10 units per group. This is called a ``completely randomized`` design (in contrast with a randomized block design).
+
+Blocking might be used in this context if there were large genetic effects that needed to be controlled. In that case, we might take litters of 6 guinea pigs each and assign the 6 treatment combinations to the guinea pigs _within litters_.
+
+# Statistical Models for ANOVA
+
+The model for ANOVA with 1 factor (called 1-way ANOVA):
+$$
+X_{ij} = \mu_i + \epsilon_{ij}
+$$
+where $\mu_i$ is the population mean for the ith group and
+the random variable $\epsilon_{ij}$ represents the "error" for the given observation,
+i.e., how far the observation is away from its predicted value $\mu_i$.
+
+An equivalent form of the 1-way ANOVA model:
+$$
+X_{ij} = \mu + \alpha_i + \epsilon_{ij}
+$$
+This model is equivalent to $\mu_i+\epsilon_{ij}$, where 
+$\mu_i$ is written as $\mu+\alpha_i$. We call $\mu$ the overall mean
+and $\alpha_i$ the effect of treatment level $i$, i.e., $\alpha_i=\mu_i-\mu$.
+
+# Overparametrization of ANOVA models
+
+The second form of the 1-way ANOVA model has 1 more parameter than can be estimated from the data.
+
+Example: 1-way ANOVA with 3 groups
+
+Model parameters:
+
+1. $\mu$=overall mean
+2. $\alpha_1$ = difference between Group 1 mean and overall mean
+3. $\alpha_2$ = difference between Group 2 mean and overall mean
+4. $\alpha_3$ = difference between Group 3 mean and overall mean
+
+Thus, we use 4 parameters to describe 3 group means. The model is overparametrized. To address this we impose a constraint on the
+model parameters such as $\sum_i \alpha_i=0$ (or sometimes $\alpha_1=0$.)
+
+# The 2-way ANOVA Model
+
+If there are 2 experimental factors, we use 2-way ANOVA for the analysis. 
+The statistical model for 2-way ANOVA:
+$$
+X_{ijk} = \mu + \alpha_i + \beta_j + \epsilon_{ijk}
+$$
+where $i$ is the index for the level of factor A, 
+$j$ is the index for the level of factor B,
+$X_{ijk}$ is the outcome for the $k$th unit
+with $A=i$ and $B=j$.
+
+- $\mu$ is the overall mean
+- $\alpha_i$ is the effect of level i of factor A
+- $\beta_j$ is the effect of level j of factor B
+
+As with 1-way ANOVA we impose constraints on the parameters because
+the model is overparametrized.
+We will revisit parametrization of models when we study
+linear regression and its relationship to ANOVA.
+
+# The ANOVA decomposition for 2-way ANOVA
+
+Just like for 1-way ANOVA, there is a 
+decomposition of the variability in the observations into
+different sources. In this case, the total variability
+is decomposed into variability due to factor A, variability
+due to factor B and error variability.
+The 'anova' function is used to calculate these.
+
+\small
+```{r,comment=""}
+anova(lm(len ~ factor(dose)+supp, data=ToothGrowth))
+```
+
+Note that the variable 'dose' must be designated as a factor so that it will
+not be treated as numeric. The degrees of freedom are divided up as follows:
+
+- 2 df for dose because there are 3 dose groups
+- 1 df for supp because there are 2 'supp' groups
+
+The df for Residuals (or "Error") are calculated by subtraction using the
+fact that the df for the 3 sources must add up to the total df, which is $n-1$,
+i.e., 2+1+56=60-1.
+
+# Hypothesis Testing
+
+For each factor we wish to test the null hypothesis of no differences between group means. For dose, we test $H_0: \alpha_1=\alpha_2=\alpha_3=0$.
+The $F$-statistic is calculated just as in 1-way ANOVA, i.e., the mean-square for the dose factor divided by the error mean-square: $F=1213.22/14.65=82.811$. This is compared with the $F_{2,56}$ distribution, yielding $p < 0.0001$.
+
+Similarly, for `supp` we have $F=205.35/14.65$ which is compared with the
+$F_{1,56}$ distribution again yielding a highly statistically significant result (p = 0.0004).
+
+Conclusion: there is strong evidence that both `dose` and `supp` have effects on the outcome variable.
+
+# 2-way ANOVA versus separate 1-way ANOVAs for each factor
+
+What would happen if we ran separate analyses for each factor using 1-way ANOVA?
+
+```{r,comment=""}
+summary(aov(len ~ factor(dose), data=ToothGrowth))
+```
+
+```{r,comment=""}
+summary(aov(len ~ supp, data=ToothGrowth))
+```
+
+# 2-way ANOVA versus 1-way ANOVA
+
+1. The MS's for each factor are the same in the 1-way ANOVAs as in the 2-way ANOVA. This is a consequence of the balanced factorial design: equal numbers of observations for all 6 treatment combinations. In general, the MS for a factore can change when other factors are added to the model.
+
+2. The error MS is higher for the 1-way ANOVA because the variability due to the missing factor becomes part of the ``error`` variability. Therefore, the F-statistics are much smaller (and even lose statistical significance for the `supp` factor).
+This illustrates the value of 2-way ANOVA.
+
+# Interactions
+
+One of the advantages of a factorial design, is that there is another hypothesis  we can test in addition to testing the effects of the 2 factors: we can test for _interaction_ between the two factors. In other words, does the effect of one factor depend on the level of the other factor?
+
+We can explore the interactions descriptively using the group sample means:
+```{r,echo=F,comment=""}
+m=tapply(len,list(supp,dose),mean)
+round(m,2)
+```
+
+Now look at the differences between OJ and VC by dose:
+```{r,echo=F,comment=""}
+round(m[1,]-m[2,],4)
+```
+
+There are large differences between OJ and VC are large for doses 0.5 and 1 but not for dose 2. This suggest an interactive effect.
+
+# 2-way ANOVA with interaction
+
+\small
+```{r,comment=""}
+anova(lm(len ~ factor(dose)*supp, data=ToothGrowth))
+```
+
+There is evidence for an interaction  between dose and supp (p=0.02).
+
+Note that the MS's for dose and supp are unchanged from previous analyses -- this is again a result of the balanced factorial design and will not always be true. 
+
+# The 2-way ANOVA Model with Interaction
+
+To represent interactions we add a new term to the model:
+$$
+X_{ijk} = \mu + \alpha_i + \beta_j + \gamma_{ij} + \epsilon_{ijk}
+$$
+In this model, the term $\gamma_{ij}$ describes the interaction 
+between the two factors. For the vitamin C experiment there are
+6 of these parameters ($i=1,2,3; j=1,2$).
+As before constraints are imposed on the parameters because
+the model is overparametrized.
+
+The terms $\alpha_i$ and $\beta_j$ in the interaction model are called
+the ``main effects`` of the dose and supp factors.
+
+# Interpretation of the main effects
+
+We can think of the main effects for a factor as representing the ``average`` effects of the factor, averaged over the levels of the other factor.
+
+For example, the results show that the main effect of supp is significant. This represents a comparison of the overall difference between OJ and VC averaged over the levels of dose. To examine these effects we look at the sample means
+for OJ and VC ignoring the dose level.
+
+```{r,echo=F,comment=""}
+m=tapply(len,supp,mean)
+round(m,2)
+```
+
+There are large differences between the groups overall. 
+
+Is this still a valid inference when we have evidence of an interaction?
+Yes, but we have to be careful to remember that the main effect represents
+the average effect of a factor. If the levels of dose used in the experiment  are representative of the range of doses typically used in practice, then the main effect of supp is meaningful.
+
+# Using the no-interaction model
+
+In some situations we ignore the possibility of interactions, and use the no-interaction model to make inferences on the main effects.
+
+When is this valid? There are several considerations:
+
+1. Are the levels of the factors typical of those used in practice?
+
+2. Is there reason to believe that interactions, if present, would not be substantial (e.g., from previous experiments)? 
+
+3. Is it a balanced factorial design? If not, we have to consider the possibility of confounding - we will come back to this in the context of linear regression.
+
+
+# The NPK experiment
+
+A 3-way factorial experiment on the growth of peas.
+
+The 3 factors are:
+
+1. N: indicator (0/1) for the application of nitrogen.
+
+2. P: indicator (0/1) for the application of phosphate.
+
+3. K: indicator (0/1) for the application of potassium.
+
+The outcome is
+
+__yield__: Yield of peas, in pounds/plot.
+
+
+# Factorial design
+
+There were 3 observations for each of the 8 combinations of factor levels.
+
+```{r, echo=F,comment=""}
+with(npk,table(N,P,K))
+```
+
+# 3-way ANOVA for the NPK experiment
+
+Ignoring the blocking in this experiment for now:
+
+```{r,comment=""}
+summary(aov(yield ~ N*P*K,data=npk))
+```
+
+
+# 3-way ANOVA without interactions
+
+```{r,comment=""}
+summary(aov(yield ~ N+P+K,data=npk))
+```
+
+# Regression Analysis of Experiments with 2 or More Factors
+
+We can also fit linear regression models that account for
+both the dose and supplement type factors. As before when
+we compared ANOVA and regression with 1 factor, the
+difference between ANOVA and regression is that for ANOVA,
+dose is treated as a categorical variable, whereas with regression it is treated as a
+quantitative variable and linear relationships are modeled.
+
+We will review separate linear regression analyses for the two
+supplement groups and then see how to combine them.
+
+# Separate analyses of the two groups
+
+```{r,echo=F,fig.height=5,fig.width=8}
+par(mfrow=c(1,2),mar=c(5,4,1,1))
+d=ToothGrowth
+plot(len ~ dose, data=d, subset=(supp=="OJ"), ylim=c(0,35),main="Supp: OJ")
+abline(lm(len ~ dose, data = d, subset=(supp=="OJ")))
+plot(len ~ dose, data=d, subset=(supp=="VC"), ylim=c(0,35),main="Supp: VC")
+abline(lm(len ~ dose, data = d, subset=(supp=="VC")))
+```
+
+# Fitting the regression models for each group separately 
+
+This is an experiment with 2 factors: supp (OJ or VC), and dose ($X=0.5, 1, 2$). Previously we fit dose-response models to the two supp groups separately.
+
+$$
+\mbox{Group VC}: Y=\alpha_{VC}+\beta_{VC}\ X + \epsilon_{VC}
+$$
+
+
+\small
+```{r,comment=""}
+summary(lm(len ~ dose, data=d, subset=(supp=="OJ")))$coef
+```
+
+
+$$
+\mbox{Group OJ}: Y=\alpha_{OJ} + \beta_{OJ}\ X + \epsilon_{OJ}
+$$
+
+\small
+```{r}
+summary(lm(len ~ dose, data=d, subset=(supp=="VC")))$coef
+```
+
+# Fitting two regression lines with a single model
+
+There are two ways in which this is done in practice. Because we want to combine the two models into one model,
+we rewrite the two models using a comment error term $\epsilon$
+(note that this is making an extra assumption):
+
+\begin{eqnarray*}
+Y&=&\alpha_{OJ}+\beta_{OJ}\ X + \epsilon,\ \mbox{if group OJ},\\
+ &=&\alpha_{VC}+\beta_{VC}\ X + \epsilon,\ \mbox{if group VC}.
+\end{eqnarray*}
+
+To write the models with one equation define two indicator variables:
+$I_{VC}=I\{Group="VC"\}=1$, for group VC and 0 for group OJ, and
+similarly for $I_{OJ}=I\{Group="OJ"\}$.
+Then the two regression models can be written as
+
+\begin{eqnarray*}
+Y & = & I_{VC}(\alpha_{VC}+\beta_{VC}\ X) + I_{OJ}(\alpha_{OJ}+\beta_{OJ}\ X) + \epsilon\\
+  & = & \alpha_{VC}I_{VC}+\beta_{VC}I_{VC}I_{VC}X+\alpha_{OJ}I_{OJ}+\beta_{OJ}I_{OJ}X\\
+  & = & \alpha_{VC}I_{VC}+\beta_{VC}Z_{VC}+\alpha_{OJ}I_{OJ}+\beta_{OJ}Z_{OJ}.
+\end{eqnarray*}
+
+---
+
+$$
+Y = \alpha_{VC}I_{VC}+\beta_{VC}Z_{VC}+\alpha_{OJ}I_{OJ}+\beta_{OJ}Z_{OJ}
+$$
+
+This model is an example of a _multiple regression model_,
+which means that it has multiple predictor variables.
+
+This model has four predictor variables:
+$I_{VC}$, $Z_{VC}=I_VC \times X$, $I_{OJ}$, and $Z_{OJ}=I_{OJ}\times X$.
+
+Note that the model has no intercept!
+In the simplest type of regression model of the form
+$\alpha+\beta X$, the intercept term ($\alpha$) is a
+parameter without any predictor variable attached to it.
+All 4 terms in the above model include a coefficient and
+a predictor variable. Note that we can think of the intercept
+as being the coefficient for the predictor variable which is
+equal to 1 for all observations, i.e., $\alpha = \alpha \times 1$.
+
+# Fitting the model
+
+To suppress the intercept we use the notation "-1" in the 'lm' function.
+
+\small
+```{r,comment=""}
+d$I_OJ=as.numeric(d$supp=="OJ")
+d$I_VC=as.numeric(d$supp=="VC")
+d$Z_OJ=d$I_OJ*d$dose
+d$Z_VC=d$I_VC*d$dose
+summary(lm(len ~ -1 + I_OJ + Z_OJ + I_VC + Z_VC, data=d))$coef
+```
+
+\normalsize
+The coefficient estimates are exactly the same as those obtained from fitting the models separately. However, the estimated
+SEs are slightly different because the combined model
+assumes the same error variance for both groups, whereas
+the separate models are not constrained in that way.
+
+# Linear regression with interaction
+
+The second method of fitting the two regression lines with one model is by using an  interaction model.
+This is just a different way of combining the two regression lines into one model: 
+$$
+Y=\beta_0 + \beta_1 X + \beta_2 I_{VC} + \beta_3 I_{VC}X + \epsilon
+$$
+
+This model equation is described as a different _parametrization_ of the model. In this form of the model, the first part $\beta_0+\beta_1 X$ represents the
+OJ group, and the second part $\beta_2I_{VC}+\beta_3 I_{VC}X$ represents the __difference__ between the VC group and the OJ group.
+The correspondence of the parameters is as follows:
+
+$\beta_0=\alpha_{OJ}$,
+
+$\beta_1=\beta_{OJ}$,
+
+$\beta_2=\alpha_{VC}-\alpha_{OJ}$
+
+$\beta_3=\beta_{VC}-\beta_{OJ}$
+
+# Fitting the interaction model
+
+The syntax for an interaction is A:B for the interaction between 2 variables A and B.
+
+\small
+```{r,comment=""}
+summary(lm(len ~ dose + I_VC + dose:I_VC, data=d))$coef
+```
+
+It can also be done with the "*" notation: "dose*I_VC"
+
+\normalsize
+Comparing results with the results of the separate model fits:
+
+$\hat\beta_0=11.55=\hat\alpha_{OJ}$
+
+$\hat\beta_1=7.811=\hat\beta_{OJ}$
+
+$\hat\beta_2=-8.255=\hat\alpha_{VC}-\hat\alpha_{OJ}=3.295-11.55$
+
+$\hat\beta_3=3.904=\hat\beta_{VC}-\hat\beta_{OJ}=11.71571-7.811429$
+
+# Interpretation of the parameters in the interaction model
+
+$\beta_0$: mean of $Y$ _for group OJ_, dose 0
+
+$\beta_1$: difference in mean of $Y$ per unit difference in dose _for group OJ_
+
+$\beta_2$: difference between mean $Y$ for group VC and group OJ _for dose 0_
+
+$\beta_3$: difference between regression coefficient for dose for group VC and regression coefficient for dose for group OJ
+
+Terminology: the OJ group here plays the role of the "reference" group. The intercept ($\beta_0$) and the coefficient of dose ($\beta_1$) pertain to the reference group. The other terms involve contrasts between the other group and the reference group.
+
+Note that the interpretation of the intercept is consistent with the general definition of an intercept as the mean response for all variables in the model set equal to 0.
+
+# Graphical interpretation of the interaction model
+
+Interaction means non-parallel lines. The slope of the line for the VC group is greater than the slope of the line for the OJ group by the amount $\hat\beta_3=3.9$. 
+
+```{r,echo=F,fig.height=4.5,fig.width=5.5}
+plot(len ~ dose, data=d, type="n", ylim=c(0,35),main="")
+points(d$dose[d$supp=="OJ"],d$len[d$supp=="OJ"],pch=1,col=2)
+points(d$dose[d$supp=="VC"],d$len[d$supp=="VC"],pch=2,col=4)
+abline(lm(len ~ dose, data = d, subset=(supp=="OJ")),lty=1,col=2)
+abline(lm(len ~ dose, data = d, subset=(supp=="VC")),lty=2,col=4)
+legend("bottomright",c("OJ","VC"),pch=1:2,lty=1:2,col=c(2,4))
+```
+
+# Advantages (and a disadvantage) of the combined model 
+
+_Advantage of the combined model_
+
+Using the combined regression model allows us
+to answer two types of questions:
+
+1. What is the effect of dose on tooth growth for each specific type of vitamin C?
+
+2. Is the effect of dose on tooth growth __different__ for the two types of vitamin C? We can estimate the difference between effects of dose in the two groups as well as perform confidence intervals and hypothesis tests for this difference.
+
+_Advantage of 2 separate models_:
+
+A (minor) disadvantage of the combined model is that we were forced to assume
+a constant error variance for the two groups, whereas the separate models
+can have different error variances. We will see how to avoid this problem with the
+combined model using robust SEs.
+
+# Comparison of ANOVA and regression for the interaction model
+
+Comparing results from ANOVA with linear regression for this data,
+we see that the results are similar. Both models provide some evidence for
+an interaction.
+
+If the true relationship between dose and response is linear,
+then linear regression can yield more powerful tests by
+taking advantage of the linearity.
+
+
+# The full regression output
+
+\small
+```{r,comment=""}
+summary(lm(len ~ supp*dose, data=ToothGrowth))
+```
+
+# The overall F-test
+
+The F-test for this model is called the "overall" F test
+because it is assessing the significance of the entire model
+(not one specific term in the model). The null hypothesis for this
+F-test is that all coefficients in the model
+(except for the intercept) are equal to 0. 
+In this case it is unsurprisingly highly statisically significant
+because we already knew that some of the terms in the model
+are highly significant.
