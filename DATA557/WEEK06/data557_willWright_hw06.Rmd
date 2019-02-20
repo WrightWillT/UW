@@ -9,10 +9,14 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 
 library(ggplot2)
+library(corrplot)
+library(dplyr)
+library(tidyr)
 
 # read data
 setwd("~/UW/DATA557/WEEK06/")
 cellData <- read.csv("cells.csv")
+salesData <- read.csv("Sales.csv")
 ```
 
 # DATA 557
@@ -83,6 +87,8 @@ g + geom_point(alpha = 0.3, size = 3) +
   
 For ANOVA, the results become slightly less significant for than without interaction and both sex and the interaction are not significant.  For the linear regression, the results show a less significant effect for dose and no effect for sex or the interaction.  This makes sense since there are fewer datapoints in each bucket for gender and this will tend to decrease confidence.  
   
+\newpage
+  
 Data set for Questions 5-7: 'Sales.csv'
 
 Variables:
@@ -95,19 +101,54 @@ BATHS: number of bathrooms
 
 5. Use scatterplots to display the associations between sales price and each of the following predictors: SQFT, LOT_SIZE, BEDS and BATHS. Calculate Pearson correlation coefficients for each plot. Describe the associations in terms of linearity, strength of association and whether the association is positive or negative.
   
-```{r question5, echo = FALSE}
+```{r question5_part1, echo = FALSE}
+# subet data to relevant data
+salesData <- select(salesData, "LAST_SALE_PRICE", "SQFT", "LOT_SIZE", "BEDS", "BATHS") %>%
+  na.omit()
 
+#melt data
+salesDataTab <- salesData %>%
+  gather("variable", "value", -LAST_SALE_PRICE)
+
+g <- ggplot(salesDataTab, aes(x = value, y = LAST_SALE_PRICE))
+g + geom_point(alpha = 0.3) +
+  facet_wrap(~ variable, scales = "free") +
+  theme_bw() +
+  labs(title = "Scatterplots of Last Sale Price and Various Metrics",
+        y = "Last Sale Price",
+       x = "Value") +
+  geom_smooth(method = "lm", col = "red", linetype = 2, size = 0.5)
 ```
- 
+  
+Sqft seems to have the highest degree of linearity with last sale price while lot size seems the most non-linear.
+  
+```{r question5_part2, echo = FALSE}
+M <- cor(salesData)
+corrplot(M, method = "number")
+```
+  
+There is a positive correlation between all variables.  The strongest correlations are between last sale price and sqft, last sale price and baths, sqft and beds, and beds and baths.  The weakest correlations are between last sale price and lot size, lot size and sqft, lot size and beds, and lot size and baths.  
+   
 6. Use separate linear regression models to assess the association between sales price and each of the four predictor variables (a separate model for each predictor). Interpret the estimated regression coefficients for each model.
   
 ```{r question6, echo = FALSE}
-
+summary(lm(LAST_SALE_PRICE ~ SQFT, salesData))$coef[,"Estimate"]
+summary(lm(LAST_SALE_PRICE ~ LOT_SIZE, salesData))$coef[,"Estimate"]
+summary(lm(LAST_SALE_PRICE ~ BEDS, salesData))$coef[,"Estimate"]
+summary(lm(LAST_SALE_PRICE ~ BATHS, salesData))$coef[,"Estimate"]
 ```
- 
+  
+Sqft's coefficient of 350.9 means that for increase in sqft, price increases by that amount.  
+Lot size's coefficient of 12.4 means that for increase in lot size, price increases by that amount. This value is perhaps lower than one might expect given the low correlation creating a high intercept.
+Bed's coefficient of 182,697 means that for increase in number of beds, price increases by that amount. 
+Bath's coefficient of 321,614 means that for increase in number of baths, price increases by that amount. 
+  
 7. Fit a linear regression model with all 4 predictor variables included. Describe how the estimated coefficients for the predictors change compared to their values in the separate models. Compare the R-squared values for all of the models. 
   
 ```{r question7, echo = FALSE}
-
+options("scipen"=100, "digits"=1) # turn off scientific notation
+summary(lm(LAST_SALE_PRICE ~ (.)^2, salesData))$coef[,"Estimate"]
 ```
+   
+As a single variable, sqft dropped from 351 to 288, lot size dropped from 12.4 to 5.9, beds dropped from 183K to 62K, and now baths converted from a positive 322K to a -6K.  The interactions explain these differences.  Having fewer beds per sqft increases price, but a property needs more baths per sqft to do the same.  The same polarity of interaction applies to lot size for beds and baths.  Between beds and baths, having fewer beds per bath is associated with a lower price.  Essentially, more baths with fewer, but bigger beds is how to maximize price.  I imagine if we took into account the interaction between population density and lot size, we could explain price with more certainty for that factor (with higher densities having a strong effect on price).
  
