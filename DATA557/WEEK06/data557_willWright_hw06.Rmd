@@ -1,0 +1,113 @@
+---
+title: "DATA 557 - Homework 6"
+author: "Will Wright"
+date: "February 19, 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+
+# read data
+setwd("~/UW/DATA557/WEEK06/")
+cellData <- read.csv("cells.csv")
+```
+
+# DATA 557
+##Homework Assignment 6
+
+Data set: 'cells.csv' 
+
+Summary: a randomized clinical trial of immune cell stimulation in 40 patients 
+
+Variables:
+
+id: subject id #
+dose: drug dose (0, 10, or 100mg)
+sex: sex (0=female, 1=male)
+age: age (yrs)
+count0: pre-treatment cell count
+count1: post-treatment cell count (the response variable)
+
+1. Use ANOVA to test for a difference between mean post-treatment cell count between dose groups. Is there evidence for an effect of dose on post-treatment cell count? 
+  
+```{r question1, echo = FALSE}
+summary(aov(count1 ~ factor(dose),cellData))
+```
+    
+Yes, with p < 0.001, there is evidence for an effect of dose on post-treatment cell count.
+    
+2. Use linear regression to assess the effect of dose on post-treatment cell count? Is there evidence for an effect using regression? Give an interpretation in words of the estimated coefficient for dose. Compare the results using ANOVA and linear regression. 
+  
+```{r question2, echo = FALSE}
+summary(lm(count1 ~ dose, cellData))$coef
+
+g <- ggplot(cellData, aes(x = dose, y = count1))
+g + geom_point(alpha = 0.3, size = 3) + 
+  geom_smooth(method = "lm", col = "red", alpha = 0.2, linetype = 2, size = 0.5) +
+  # geom_boxplot(notch = FALSE, fill = "red", alpha = 0.2) +
+  theme_bw() +
+  labs(title = "Effect of Dose on Post-Treatment Cell Count",
+       x = "Dose (mg)",
+       y = "Cell Count")
+```
+  
+With a p-value of <0.001, there is strong evidence for an effect.  The coefficient for dose is 5.73, which is the estimate for how much the cell count increases per mg of dose increase. Unlike the ANOVA, here there is stronger significance largely due to the fact that the 100mg dose value is treated as much "further away" in Euclidean space than the 0 and 10 and therefore, the results are more extreme than when treated like a factor.  Also, another element of the difference is due to the linear regression testing the hypothesis that the slope is not 0 whereas ANOVA is testing for a difference in means, 
+  
+3. Add the variable sex to the ANOVA and linear regression models. Describe how the results change when the variable sex is added to the model.
+  
+```{r question3, echo = FALSE}
+summary(aov(count1 ~ factor(dose)+factor(sex),cellData))
+```
+  
+When sex is added (without interaction), the results for dose are still significant, but slightly less so. Sex, however, is not a significant factor.
+  
+4. Using ANOVA and linear regression, test for interaction between sex and dose. State the interpretations of the coefficients in the linear regression model with interaction. Give a graphical display of this linear regression model that shows the relationship between dose and response for males and females.
+  
+```{r question4, echo = FALSE}
+summary(aov(count1 ~ factor(dose)*factor(sex), cellData))
+summary(lm(count1 ~ dose*factor(sex), cellData))$coef
+
+g <- ggplot(cellData, aes(x = dose, y = count1, group = factor(sex), color = factor(sex), shape = factor(sex)))
+g + geom_point(alpha = 0.3, size = 3) + 
+  geom_smooth(method = "lm", alpha = 0.2, linetype = 2, size = 0.5, aes(fill = factor(sex))) +
+  theme_bw() +
+  labs(title = "Effect of Dose on Post-Treatment Cell Count",
+       x = "Dose (mg)",
+       y = "Cell Count") +
+  scale_colour_manual(values = c('red', 'blue')) +
+  scale_fill_manual(values = c('red', 'blue'))
+```
+  
+For ANOVA, the results become slightly less significant for than without interaction and both sex and the interaction are not significant.  For the linear regression, the results show a less significant effect for dose and no effect for sex or the interaction.  This makes sense since there are fewer datapoints in each bucket for gender and this will tend to decrease confidence.  
+  
+Data set for Questions 5-7: 'Sales.csv'
+
+Variables:
+
+LAST_SALE_PRICE: the sales price of the home
+SQFT: area of the house (sq. ft.)
+LOT_SIZE: area of the lot (sq. fit.)
+BEDS: number of bedrooms
+BATHS: number of bathrooms
+
+5. Use scatterplots to display the associations between sales price and each of the following predictors: SQFT, LOT_SIZE, BEDS and BATHS. Calculate Pearson correlation coefficients for each plot. Describe the associations in terms of linearity, strength of association and whether the association is positive or negative.
+  
+```{r question5, echo = FALSE}
+
+```
+ 
+6. Use separate linear regression models to assess the association between sales price and each of the four predictor variables (a separate model for each predictor). Interpret the estimated regression coefficients for each model.
+  
+```{r question6, echo = FALSE}
+
+```
+ 
+7. Fit a linear regression model with all 4 predictor variables included. Describe how the estimated coefficients for the predictors change compared to their values in the separate models. Compare the R-squared values for all of the models. 
+  
+```{r question7, echo = FALSE}
+
+```
+ 

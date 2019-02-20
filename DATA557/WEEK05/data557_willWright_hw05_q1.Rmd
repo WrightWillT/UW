@@ -1,0 +1,124 @@
+---
+title: "DATA 557 - Homework Assignment 5"
+author: "Will Wright"
+date: "February 12, 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+setwd("../UW/DATA557/WEEK05")
+defectsData <- read.csv("defects.csv")
+
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(scales)
+library(ggthemes)
+library(qqplotr)
+library(gridExtra)
+
+colors <- ggthemes_data[["tableau"]][["color-palettes"]][["regular"]][[2]][[2]]
+
+distribution_visualizer <- function(
+      data, 
+      title = "Histogram and Density", 
+      x = "Values", 
+      binwidthInput = (max(data)-min(data))/15){
+  binwidthInput <- binwidthInput
+  binCounts <- .bincode(data, seq(0,max(data), binwidthInput))
+  xbar <- round(mean(data),1)
+  sd <- round(sd(data),1)
+  g <- ggplot(data.frame(data), aes(data)) +
+    geom_histogram(fill = colors[1],
+                   color = colors[2],
+                   binwidth = binwidthInput) +
+    geom_vline(aes(xintercept = mean(data)),
+               color = colors[3],
+               linetype = "dashed",
+               size = 0.7) +
+    geom_density(aes(y = binwidthInput * ..count..), 
+                 alpha = 0.2, 
+                 fill = colors[2],
+                 color = colors[1]) +
+    labs(title = title,
+         x = x,
+         y = "Frequency") +
+    annotate("text", 
+             x = mean(data)*1.25, 
+             y = max(binCounts, na.rm = TRUE)*0.75, 
+             label = paste0("Mean = ", xbar), # "x\u0305 = " for Windows
+             size = 3) +
+    theme_bw()  
+  
+  
+  p <- ggplot(data.frame(data), aes(sample = data)) +
+    stat_qq_band(color = colors[1], fill = colors[2]) +
+    stat_qq_line(color = colors[3], linetype = "dashed", size = 0.7) +
+    stat_qq_point(size = 0.8, alpha = 0.3) +
+    labs(title = "Q-Q Plot",
+         x = "Theoretical Values",
+         y = "Sample Values") +
+    theme_bw()
+  
+  grid.arrange(g, p, ncol = 2)
+}
+```
+
+# DATA 557
+## Homework Assignment 5
+
+### Question 1
+
+(This is a continuation of the work on the "process.csv" data from class)
+
+Compare the mean number of defects for the 4 methods. Use the ANOVA F-test to test the null hypothesis that the mean number of defects per ball bearing is the same for all 4 methods. What is the conclusion from the test? Assess the assumptions of the ANOVA F-test. Is the F-test valid for this study? Verify your answer (i.e, whether or not the F-test is valid) using an appropriate simulation study.
+
+```{r question1_part1}
+methodA_defects <- defectsData$Defects[which(defectsData$Method=="A")]
+methodB_defects <- defectsData$Defects[which(defectsData$Method=="B")]
+methodC_defects <- defectsData$Defects[which(defectsData$Method=="C")]
+methodD_defects <- defectsData$Defects[which(defectsData$Method=="D")]
+
+summary(aov(Defects ~ Method, defectsData))
+```
+  
+The test shows that the mean number of defects is significantly different between the 4 methods with p = 0.028.
+  
+```{r question1_part2}
+distribution_visualizer(methodA_defects, "Method A Defects")
+distribution_visualizer(methodB_defects, "Method B Defects")
+distribution_visualizer(methodC_defects, "Method C Defects")
+distribution_visualizer(methodD_defects, "Method D Defects")
+
+set.seed(0192)
+xbar <- mean(defectsData$Weight)
+sd1 <- sd(defectsData$Weight[which(defectsData$Method=="A")])
+sd2 <- sd(defectsData$Weight[which(defectsData$Method=="B")])
+sd3 <- sd(defectsData$Weight[which(defectsData$Method=="C")])
+sd4 <- sd(defectsData$Weight[which(defectsData$Method=="D")])
+n <- nrow(defectsData)
+reps <- 1000
+p_vals <- rep(NA,reps)
+for(i in 1:reps){
+  sample1 <- rnorm(n, xbar, sd1)
+  sample2 <- rnorm(n, xbar, sd2)
+  sample3 <- rnorm(n, xbar, sd3)
+  sample4 <- rnorm(n, xbar, sd4)
+  
+  sample_df <- data.frame(data = c(sample1,sample2,sample3,sample4), 
+                          method = c(rep("A",n), rep("B",n), rep("C",n), rep("D",n)))
+  
+  p <- summary(aov(data ~ method, sample_df))[[1]][[5]][[1]]
+  p_vals[i] <- p
+}
+mean(p_vals<0.05)
+
+```
+
+For the assumption of normality, B seems slightly non-normal and skews left, but they seem somewhat normal overall.  
+
+For the assumption of equal variances, we can see that they are fairly different, ranging from 0.085 to 0.340.
+
+For the assumption of independence, this seems to be met since random sampling was used.
