@@ -7,17 +7,67 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(kableExtra)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(scales)
+library(ggthemes)
+library(qqplotr)
+library(gridExtra)
+
+colors <- ggthemes_data[["tableau"]][["color-palettes"]][["regular"]][[2]][[2]]
+
+distribution_visualizer <- function(
+      data, 
+      title = "Histogram and Density", 
+      x = "Values", 
+      binwidthInput = (max(data)-min(data))/15){
+  binwidthInput <- binwidthInput
+  binCounts <- .bincode(data, seq(0,max(data), binwidthInput))
+  xbar <- round(mean(data),1)
+  sd <- round(sd(data),1)
+  g <- ggplot(data.frame(data), aes(data)) +
+    geom_histogram(fill = colors[1],
+                   color = colors[2],
+                   binwidth = binwidthInput) +
+    geom_vline(aes(xintercept = mean(data)),
+               color = colors[3],
+               linetype = "dashed",
+               size = 0.7) +
+    geom_density(aes(y = binwidthInput * ..count..), 
+                 alpha = 0.2, 
+                 fill = colors[2],
+                 color = colors[1]) +
+    labs(title = title,
+         x = x,
+         y = "Frequency") +
+    annotate("text", 
+             x = mean(data)*1.25, 
+             y = max(binCounts, na.rm = TRUE)*0.75, 
+             label = paste0("Mean = ", xbar), # "x\u0305 = " for Windows
+             size = 3) +
+    theme_bw()  
+  
+  
+  p <- ggplot(data.frame(data), aes(sample = data)) +
+    stat_qq_band(color = colors[1], fill = colors[2]) +
+    stat_qq_line(color = colors[3], linetype = "dashed", size = 0.7) +
+    stat_qq_point(size = 0.8, alpha = 0.3) +
+    labs(title = "Q-Q Plot",
+         x = "Theoretical Values",
+         y = "Sample Values") +
+    theme_bw()
+  
+  grid.arrange(g, p, ncol = 2)
+}
 ```
 
 
 # DATA 557
 ## Homework Assignment 7
 
-Submissions are due by 5:00pm, Wednesday February 27.
-
-This homework is an individual (not group) assignment. You may work together to help each other solve problems, but you should do all the work, create your own solutions, and hand in your own work without copying others' work. 
-
-It is not necessary to include R code with your solutions for this assignment.
+### Question 1
 
 Data set for Question 1: 'cells.csv' 
 
@@ -32,25 +82,87 @@ age: age (yrs)
 count0: pre-treatment cell count
 count1: post-treatment cell count (the response variable)
 
-1. Use linear regression to estimate the effect of dose on post-treatment cell count, with adjustment for sex, age, and pre-treatment cell count. State the interpretation of the estimated dose effect. Using your  model, conduct a test of the null hypothesis of no effect of dose after adjustment for sex, age, and pre-treatment cell count. Do you think this test is valid? Provide justification by assessing the model assumptions.
+Use linear regression to estimate the effect of dose on post-treatment cell count, with adjustment for sex, age, and pre-treatment cell count. State the interpretation of the estimated dose effect. Using your  model, conduct a test of the null hypothesis of no effect of dose after adjustment for sex, age, and pre-treatment cell count. Do you think this test is valid? Provide justification by assessing the model assumptions.
 
-```{r question1_part1}
-
+```{r question1_part1, echo = FALSE}
+cellData <- read.csv("~/UW/DATA557/WEEK06/cells.csv")
+options(scipen = 6, digits = 3)
+kable(summary(lm(count1 ~ dose + sex + age + count0, cellData))$coef)
 ```
+  
+**Interpretation:** When sex, age, and pre-treatment cell counts are held constant, this model shows that for every 1mg increase in dose, post-treatment cell count increases 5.81, on average.
+  
+The p-value for dose is essentially 0 so we can reject the null hypothesis that dose has no effect on post-treatment cell count with sex, age, and pre-treatment cell count held constant.
 
+#### Assessing Model Assumptions
+  
+**Independence:** Given that the study is a randomized clinical trial, independence likely holds.  We do not, however, have all the relevant information to truly assess.  It would be useful, for instance, to know how patients were selected, if it was a double-blind experiment, and if dropout occurred. 
+  
+```{r question1_part2, echo = FALSE}
+fit1 <- lm(count1 ~ dose + sex + age + count0, cellData)
+par(mfrow = c(1,2))
+plot(fit1, which = c(1,3))
+```
+  
+**Linearity:** The Residuals vs Fitted plot shows that the residuals have two linear trends--first decreasing, then increasing. 
+
+**Constant Variance:** The Scale-Location plot shows non-constant variance with more variance at greater values.  
+
+\newpage
+
+```{r question1_part3, echo = FALSE}
+distribution_visualizer(cellData$count1-mean(cellData$count1))
+```
+  
+**Normality or Large Sample Size:** The residuals are pretty-clearly non-normal, which a major skew to the left.  With only 40 data points, reliance on the CLT is questionable. 
+  
+**Overall Assessment:** I do not believe this test is valid given how poorly the model satisfies the assumptions (especially non-constant variance).  
+  
+\newpage  
+### Question 2
+  
 Data set for Question 2: 'Sales.csv'
 
 Variables:
 
-LAST_SALE_PRICE: the sales price of the home
-SQFT: area of the house (sq. ft.)
-LOT_SIZE: area of the lot (sq. ft.)
-BEDS: number of bedrooms
-BATHS: number of bathrooms
+LAST_SALE_PRICE: the sales price of the home  
+SQFT: area of the house (sq. ft.)  
+LOT_SIZE: area of the lot (sq. ft.)  
+BEDS: number of bedrooms  
+BATHS: number of bathrooms  
 
-2. You are a real estate agent in Seattle who is often asked by potential clients the question "If I added a bathroom to my house, how much would it increase the house's value." House price depends on many factors in addition to the number of bathrooms, so use linear regression to adjust for some of these other confounding variables (use only the variables listed above for your analyses). Your answer should be one that you can use for any client (i.e., for the "average" house). However, in addition you would like to have answers specifically for owners of small houses and owners of large houses (as reflected by the area of the house). Provide two different estimates of the value of an additional bathroom: one for houses of below-average size, and one for houses of above-average size. (Note: Ignore the fact that the data set is a few years old and treat it as if it is current.)
+You are a real estate agent in Seattle who is often asked by potential clients the question "If I added a bathroom to my house, how much would it increase the house's value." House price depends on many factors in addition to the number of bathrooms, so use linear regression to adjust for some of these other confounding variables (use only the variables listed above for your analyses). Your answer should be one that you can use for any client (i.e., for the "average" house). However, in addition you would like to have answers specifically for owners of small houses and owners of large houses (as reflected by the area of the house). Provide two different estimates of the value of an additional bathroom: one for houses of below-average size, and one for houses of above-average size. (Note: Ignore the fact that the data set is a few years old and treat it as if it is current.)
 
-```{r question2_part1}
+```{r question2_part1, echo = FALSE}
+salesData <- read.csv("~/UW/DATA557/WEEK06/Sales.csv")
+fit2 <- lm(LAST_SALE_PRICE ~ SQFT + LOT_SIZE + BEDS + BATHS, salesData)
+kable(summary(fit2)$coef)
+```
+  
+**Interpretation:** All else held constant, the average home increases in value by $86,936 for every bathroom added.
+
+**Trifurcating into Small, Medium, and Large Houses:** In order to split the dataset into a small/medium/large bucketing, the data will be divided such that an equal number of data points falls into each bucket (1565 houses per bucket).
+  
+**Small Houses**:
+
+```{r question2_part2, echo = FALSE}
+salesData <- arrange(salesData, SQFT) %>%
+  filter(!is.na(SQFT))
+smallSales <- salesData[1:(nrow(salesData)/3),]
+largeSales <- salesData[(2*nrow(salesData)/3+1):nrow(salesData),]
+smallFit <- lm(LAST_SALE_PRICE ~ SQFT + LOT_SIZE + BEDS + BATHS, smallSales)
+kable(summary(smallFit)$coef)
 
 ```
+
+For small houses (max size of 1720sqft), every additional bath increases the house price by $37,457.
+  
+**Large Houses**
+```{r question2_part3, echo = FALSE}
+largeFit <- lm(LAST_SALE_PRICE ~ SQFT + LOT_SIZE + BEDS + BATHS, largeSales)
+kable(summary(largeFit)$coef)
+
+```
+
+For large houses (min size of 2420sqft), every additional bathroom adds $131,569 to the value of the house.
 
