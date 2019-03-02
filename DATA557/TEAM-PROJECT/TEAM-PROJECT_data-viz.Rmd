@@ -87,7 +87,7 @@ distribution_visualizer <- function(
 
 ## Exploration
 
-```{r eda1}
+```{r na_cleansing}
 # search for NAs
 naSummer <- function(column_input) sum(is.na(column_input))
 apply(crimeData, 2, naSummer)
@@ -96,9 +96,20 @@ kable(rbind(
   crimeData[which(is.na(crimeData$Reported.Date)),],
   crimeData[which(is.na(crimeData$Occurred.Date)),])
   )
+
+# set rows with NA values aside and remove
+crimeData_nas <- crimeData[which(is.na(crimeData$Reported.Time)),]
+crimeData <- na.omit(crimeData)
 ```
 
-Looks like there are two NA values for dates.  I recommend excluding for date-based analyses.
+```{r time_cleansing}
+# only the decade of 2009 through 2018
+incomeData <- read.csv("~/UW/DATA557/TEAM-PROJECT/seattle_medianIncome.csv")
+
+
+```
+
+
 
 
 ```{r eda2}
