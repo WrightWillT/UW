@@ -17,7 +17,7 @@ library(lubridate)
 ########################################################################################################################
 setwd("~/UW/DATA557/TEAM-PROJECT/") 
 crimeData_raw <- read.csv("Crime_Data.csv") #514,152 rows
-incomeData <- read.csv("seattle_medianIncome_cleaned.csv")
+incomePopData <- read.csv("seattle_medianIncome_pop_cleaned.csv")
 ```
 
 ```{r cleaning, echo = FALSE}
@@ -51,11 +51,11 @@ crimeData <- na.omit(crimeData) #514,150 rows (2 omitted)
 crimeData <- crimeData[which(crimeData$occurredYear>=2009 & crimeData$occurredYear <2019),] #464,023 (50,127 more omitted)
 
 # join on median income data after converting neighborhood in each dataset to character class
-incomeData$crimeData_neighborhood <- as.character(incomeData$crimeData_neighborhood)
+incomePopData$crimeData_neighborhood <- as.character(incomePopData$crimeData_neighborhood)
 
-crimeData_income <- crimeData %>%
+crimeData_incomePop <- crimeData %>%
   mutate(Neighborhood = as.character(Neighborhood)) %>%
-  left_join(incomeData[,2:3], by = c("Neighborhood" = "crimeData_neighborhood")) %>%
+  left_join(incomeData[,2:4], by = c("Neighborhood" = "crimeData_neighborhood")) %>%
   na.omit() #461,200 rows (omitted 2823 rows with "UNKNOWN" neighborhood)
 
 ```
