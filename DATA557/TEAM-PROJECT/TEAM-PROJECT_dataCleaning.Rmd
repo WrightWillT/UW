@@ -18,6 +18,7 @@ library(lubridate)
 setwd("~/UW/DATA557/TEAM-PROJECT/") 
 crimeData_raw <- read.csv("Crime_Data.csv") #514,152 rows
 incomePopData <- read.csv("seattle_medianIncome_pop_cleaned.csv")
+regionData <- read.csv("neighborhoods_regions.csv")
 ```
 
 ```{r cleaning, echo = FALSE}
@@ -33,15 +34,9 @@ crimeData <- crimeData %>%
   mutate(reportedYear = year(crimeData$Reported.Date),
          occurredYear = year(crimeData$Occurred.Date),
          reportedMonth = month(crimeData$Reported.Date),
-         occurredMonth = month(crimeData$Occurred.Date))
-
-# clean NAs (commented out parts for EDA, but can be used to explore for same results)
-# naSummer <- function(column_input) sum(is.na(column_input))
-# apply(crimeData, 2, naSummer)
-# # show data with NAs
-# rbind(crimeData[which(is.na(crimeData$Reported.Date)),],
-#       crimeData[which(is.na(crimeData$Occurred.Date)),])
-#   
+         occurredMonth = month(crimeData$Occurred.Date),
+         occurredHour = floor(Occurred.Time/100),
+         reportedHour = floor(Reported.Time/100))
 
 # set rows with NA values aside and remove
 crimeData_nas <- crimeData[which(is.na(crimeData$Reported.Time)),]
@@ -60,4 +55,61 @@ crimeData_incomePop <- crimeData %>%
 
 ```
 
+```{r hourlyData, echo = FALSE}
+# convert to wide format
+crimeData_hourTab <- crimeData %>%
+  group_by(occurredYear,occurredMonth,occurredHour) %>%
+  summarize(crimeVolume = n()) %>%
+  spread(occurredHour,crimeVolume)
 
+# rename so columns arent numbers
+for(i in 3:length(names(crimeData_hourTab))){
+  names(crimeData_hourTab)[i] <- paste0("hour_",names(crimeData_hourTab)[i])
+}
+
+# add season
+crimeData_hourTab$occurredSeason <- NA
+crimeData_hourTab$occurredSeason[which(crimeData_hourTab$occurredMonth %in% c(12,1,2))] <- "Winter"
+crimeData_hourTab$occurredSeason[which(crimeData_hourTab$occurredMonth %in% c(3,4,5))] <- "Spring"
+crimeData_hourTab$occurredSeason[which(crimeData_hourTab$occurredMonth %in% c(6,7,8))] <- "Summer"
+crimeData_hourTab$occurredSeason[which(crimeData_hourTab$occurredMonth %in% c(9,10,11))] <- "Fall"
+
+# move season to 2nd column
+crimeData_hourTab <- subset(crimeData_hourTab, select = c(occurredYear, occurredSeason, occurredMonth:26))
+
+# add part of day
+crimeData_hourTab$morning <- rowSums(crimeData_hourTab[,10:15])
+crimeData_hourTab$afternoon <- rowSums(crimeData_hourTab[,16:21])
+crimeData_hourTab$evening <- rowSums(crimeData_hourTab[,22:27])
+crimeData_hourTab$night <- rowSums(crimeData_hourTab[,4:9])
+```
+
+
+```{r neighborhoodData, echo = FALSE}
+# create tab for neighborhood
+crimeData_neighborhoodTab <- crimeData_incomePop %>%
+  group_by(Neighborhood) %>%
+  summarize(medianIncome = first(median_income), population = first(population), crimeVolume = n()) %>%
+  mutate(crimePerCapita = crimeVolume/population)
+
+```
+
+
+```{r, specificCrimeData, echo = FALSE}
+crimeData_specificCrimeTab <- crimeData %>%
+  group_by(Crime.Subcategory, Neighborhood) %>%
+  summarize(crimeVolume = n()) %>%
+  spread(Neighborhood, crimeVolume)
+
+# create vectors of neighborhoods in each region
+region_NE <- regionData$neighborhood[which(regionData$region=="NE")]
+region_NW <- regionData$neighborhood[which(regionData$region=="NW")]
+region_SE <- regionData$neighborhood[which(regionData$region=="SE")]
+region_SW <- regionData$neighborhood[which(regionData$region=="SW")]
+
+# sum by region
+crimeData_specificCrimeTab$region_NE <- rowSums(crimeData_specificCrimeTab[,which(names(crimeData_specificCrimeTab) %in% region_NE)])
+crimeData_specificCrimeTab$region_NW <- rowSums(crimeData_specificCrimeTab[,which(names(crimeData_specificCrimeTab) %in% region_NW)])
+crimeData_specificCrimeTab$region_SE <- rowSums(crimeData_specificCrimeTab[,which(names(crimeData_specificCrimeTab) %in% region_SE)])
+crimeData_specificCrimeTab$region_SW <- rowSums(crimeData_specificCrimeTab[,which(names(crimeData_specificCrimeTab) %in% region_SW)])
+```
