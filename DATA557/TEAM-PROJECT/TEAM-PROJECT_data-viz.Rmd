@@ -6,24 +6,25 @@ output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
+########################################################################################################################
 # LOAD LIBRARIES
-library(ggplot2)
-library(tidyr)
+########################################################################################################################
 library(dplyr)
-library(scales)
-library(ggthemes)
-library(qqplotr)
-library(gridExtra)
 library(lubridate)
-library(kableExtra)
 
-
+########################################################################################################################
 # READ DATA
+########################################################################################################################
 setwd("~/UW/DATA557/TEAM-PROJECT/") 
+crimeData_raw <- read.csv("Crime_Data.csv") #514,152 rows
+incomeData <- read.csv("seattle_medianIncome_cleaned.csv")
+```
 
-crimeData_raw <- read.csv("Crime_Data.csv")
+```{r cleaning, echo = FALSE}
+########################################################################################################################
+# CLEAN DATA
+########################################################################################################################
 
-# CLEANING
 crimeData <- crimeData_raw
 crimeData$Occurred.Date <- as_date(as.character(crimeData$Occurred.Date), format = "%m/%d/%Y", tz = "UTC")
 crimeData$Reported.Date <- as_date(as.character(crimeData$Reported.Date), format = "%m/%d/%Y", tz = "UTC")
@@ -34,119 +35,29 @@ crimeData <- crimeData %>%
          reportedMonth = month(crimeData$Reported.Date),
          occurredMonth = month(crimeData$Occurred.Date))
 
-
-
-# SET DISTRIBUTION VIZ
-
-colors <- ggthemes_data[["tableau"]][["color-palettes"]][["regular"]][[2]][[2]]
-
-distribution_visualizer <- function(
-      data, 
-      title = "Histogram and Density", 
-      x = "Values", 
-      binwidthInput = (max(data)-min(data))/15){
-  binwidthInput <- binwidthInput
-  binCounts <- .bincode(data, seq(0,max(data), binwidthInput))
-  xbar <- round(mean(data),1)
-  sd <- round(sd(data),1)
-  g <- ggplot(data.frame(data), aes(data)) +
-    geom_histogram(fill = colors[1],
-                   color = colors[2],
-                   binwidth = binwidthInput) +
-    geom_vline(aes(xintercept = mean(data)),
-               color = colors[3],
-               linetype = "dashed",
-               size = 0.7) +
-    geom_density(aes(y = binwidthInput * ..count..), 
-                 alpha = 0.2, 
-                 fill = colors[2],
-                 color = colors[1]) +
-    labs(title = title,
-         x = x,
-         y = "Frequency") +
-    annotate("text", 
-             x = mean(data)*1.25, 
-             y = max(binCounts, na.rm = TRUE)*0.75, 
-             label = paste0("Mean = ", xbar), # "x\u0305 = " for Windows
-             size = 3) +
-    theme_bw()  
-  
-  
-  p <- ggplot(data.frame(data), aes(sample = data)) +
-    stat_qq_band(color = colors[1], fill = colors[2]) +
-    stat_qq_line(color = colors[3], linetype = "dashed", size = 0.7) +
-    stat_qq_point(size = 0.8, alpha = 0.3) +
-    labs(title = "Q-Q Plot",
-         x = "Theoretical Values",
-         y = "Sample Values") +
-    theme_bw()
-  
-  grid.arrange(g, p, ncol = 2)
-}
-```
-
-## Exploration
-
-```{r na_cleansing}
-# search for NAs
-naSummer <- function(column_input) sum(is.na(column_input))
-apply(crimeData, 2, naSummer)
-# show data with NAs
-kable(rbind(
-  crimeData[which(is.na(crimeData$Reported.Date)),],
-  crimeData[which(is.na(crimeData$Occurred.Date)),])
-  )
+# clean NAs (commented out parts for EDA, but can be used to explore for same results)
+# naSummer <- function(column_input) sum(is.na(column_input))
+# apply(crimeData, 2, naSummer)
+# # show data with NAs
+# rbind(crimeData[which(is.na(crimeData$Reported.Date)),],
+#       crimeData[which(is.na(crimeData$Occurred.Date)),])
+#   
 
 # set rows with NA values aside and remove
 crimeData_nas <- crimeData[which(is.na(crimeData$Reported.Time)),]
-crimeData <- na.omit(crimeData)
-```
+crimeData <- na.omit(crimeData) #514,150 rows (2 omitted)
 
-```{r time_cleansing}
-# only the decade of 2009 through 2018
-incomeData <- read.csv("~/UW/DATA557/TEAM-PROJECT/seattle_medianIncome.csv")
+# filter to only the decade of 2009 through 2018
+crimeData <- crimeData[which(crimeData$occurredYear>=2009 & crimeData$occurredYear <2019),] #464,023 (50,127 more omitted)
 
+# join on median income data after converting neighborhood in each dataset to character class
+incomeData$crimeData_neighborhood <- as.character(incomeData$crimeData_neighborhood)
 
-```
-
-
-
-
-```{r eda2}
-
-discrete_distVizer <- function(column_name){
-  
-  df <- as.data.frame(table(column_name))
-  df[,2] <- as.integer(df[,2])
-  df <- arrange(df, desc(df[,2]))
-  g <- ggplot(df, aes(x = reorder(df[,1], df[,2]), y = df[,2]))
-  g+ geom_bar(stat = "identity") + 
-    coord_flip() + 
-    theme_bw()
-}
-
-apply(crimeData[,which(names(crimeData) %in% c("Crime.Subcategory",
-                                               "Primary.Offense.Description",
-                                               "Precinct",
-                                               "Sector",
-                                               "Beat",
-                                               "Neighborhood",
-                                               "reportedYear",
-                                               "occurredYear",
-                                               "reportedMonth",
-                                               "occurredMonth"))], 
-      2, discrete_distVizer)
-
-apply(crimeData[,which(names(crimeData) %in% c("Crime.Subcategory",
-                                               "Primary.Offense.Description",
-                                               "Precinct",
-                                               "Sector",
-                                               "Beat",
-                                               "Neighborhood",
-                                               "reportedYear",
-                                               "occurredYear",
-                                               "reportedMonth",
-                                               "occurredMonth"))], 
-      2, table)
+crimeData_income <- crimeData %>%
+  mutate(Neighborhood = as.character(Neighborhood)) %>%
+  left_join(incomeData[,2:3], by = c("Neighborhood" = "crimeData_neighborhood")) %>%
+  na.omit() #461,200 rows (omitted 2823 rows with "UNKNOWN" neighborhood)
 
 ```
+
+
