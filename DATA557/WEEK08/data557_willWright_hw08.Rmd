@@ -1,0 +1,180 @@
+---
+title: "DATA557 - Homework 8"
+author: "Will Wright"
+date: "3/6/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+cellData <- read.csv("~/UW/DATA557/WEEK06/cells.csv")
+options(scipen = 8, digits = 4)
+
+library(kableExtra)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(scales)
+library(ggthemes)
+library(qqplotr)
+library(gridExtra)
+
+colors <- ggthemes_data[["tableau"]][["color-palettes"]][["regular"]][[2]][[2]]
+
+distribution_visualizer_poisson <- function(
+      data, 
+      title = "Histogram and Density", 
+      x = "Values", 
+      binwidthInput = (max(data)-min(data))/15){
+  binwidthInput <- binwidthInput
+  binCounts <- .bincode(data, seq(0,max(data), binwidthInput))
+  xbar <- round(mean(data),1)
+  sd <- round(sd(data),1)
+  g <- ggplot(data.frame(data), aes(data)) +
+    geom_histogram(fill = colors[1],
+                   color = colors[2],
+                   binwidth = binwidthInput) +
+    geom_vline(aes(xintercept = mean(data)),
+               color = colors[3],
+               linetype = "dashed",
+               size = 0.7) +
+    geom_density(aes(y = binwidthInput * ..count..), 
+                 alpha = 0.2, 
+                 fill = colors[2],
+                 color = colors[1]) +
+    labs(title = title,
+         x = x,
+         y = "Frequency") +
+    annotate("text", 
+             x = mean(data)*1.25, 
+             y = max(binCounts, na.rm = TRUE)*0.75, 
+             label = paste0("Mean = ", xbar), # "x\u0305 = " for Windows
+             size = 3) +
+    theme_bw()
+  
+  # p <- ggplot(data.frame(data), aes(sample = data)) +
+  #   stat_qq_band(distribution = stats::qpois,
+  #                dparams = list(lambda = mean(data)),
+  #                color = colors[1],
+  #                fill = colors[2]) +
+  #   stat_qq_line(distribution = stats::qpois,
+  #                dparams = list(lambda = mean(data)),
+  #                color = colors[3],
+  #                linetype = "dashed",
+  #                size = 0.7) +
+  #   stat_qq_point(distribution = stats::qpois,
+  #                dparams = list(lambda = mean(data)),
+  #                size = 0.8,
+  #                alpha = 0.3) +
+  #   labs(title = "Poisson Q-Q Plot",
+  #        x = "Theoretical Values",
+  #        y = "Sample Values") +
+  #   theme_bw()
+  # # 
+  # grid.arrange(g, p, ncol = 2)
+  g
+}
+```
+
+
+Question 1.
+
+a)	Use Poisson regression to estimate the effect of dose on post-treatment cell count in the “cells” data from HW 7. Treat dose as a quantitative variable, and adjust for sex, age and pre-treatment cell count. Report the coefficient estimate table.
+
+```{r question1_a, echo = FALSE}
+fit=glm(count1 ~ dose + sex + age + count0, cellData, family=poisson)
+kable(summary(fit)$coef)
+
+```
+
+b)	State the interpretation of the exponentiated coefficient estimate for dose.
+
+$$e^{B_1} = \frac{\mu(X+1)}{\mu(X)}$$
+
+In our case, $e^{0.0278} = 1.028$ and the interpretation of the exponentiated coefficient is that for increase of 1mg in dose, there is an average of a 2.8% increase in post-treatment cell count, when holding sex, age, and pre-treatment cell count constant. 
+
+c)	Is there evidence of an effect of dose?
+
+Yes, at $p<0.05$, there is a significant effect.
+
+\newpage
+
+d)	Are robust SEs necessary?
+
+```{r question1_d, echo = FALSE, fig.width=6, fig.height=3.5}
+fit_lm <- lm(count1 ~ dose + sex + age + count0, cellData)
+par(mfrow = c(1,2))
+plot(fit_lm, which = c(1,3))
+
+```
+
+The above uses a regular linear regression and we can see that the data is heteroscedastic so robust SEs are necessary.
+
+e)	Assess the assumptions of the Poisson regression model.
+
+Assumptions:
+
+1. The responses are independent - Assumed to be true, but unknown
+  
+2. Each $y_i$ is Poisson-distributed with mean $e^{B_0+B_1X_i}$
+
+  
+```{r question1_e_dist, echo = FALSE, fig.width=6, fig.height=3.5}
+distribution_visualizer_poisson(cellData$count1)
+```
+
+It does not appear to follow the poisson distribution very closely, but it has the general shape. 
+  
+f)	Compare results with results from the linear regression model for HW 7, Q1. 
+
+In HW7, Q1, the linear model has a dose coefficient of 5.81, which is difficult to directly compare to our 2.8% for this question. Both are significant, but clearly, the assumptions matter. 
+
+\newpage
+
+Question 2.
+
+a)	Use Poisson regression with dose as a categorical (i.e., factor) variable. Report the coefficient estimate table.
+  
+  
+```{r question2_a, echo = FALSE}
+fit=glm(count1 ~ factor(dose) + sex + age + count0, cellData, family=poisson)
+kable(summary(fit)$coef)
+
+```
+  
+b)	Interpret the estimated effects of dose in this model using exponentiated coefficient estimates.
+
+The 0.100 coefficient for 'factor(dose)10' is exponentiated to a 10.5% increase in post-treatment cell count for every 1mg increase in dose, all else held constant between the 0 dose level and 100 dose level.  The 2.68 coefficient for 'factor(dose)100' is exponentiated to a 1457% increase in post-treatment cell count for every 1mg increase in dose, all else held constant for the 0 dose level and the 100 dose level.
+
+\newpage
+
+Question 3.
+
+a)	For this question you are to use the “Teeth” data to estimate the association between having at least one tooth extracted (i.e., EXTR > 0) and disease severity (PDALL), with adjustment for age and gender. Estimate this association using logistic regression. Report the coefficient estimate table.
+```{r question3_a, echo = FALSE}
+teethData <- read.csv("~/UW/DATA557/WEEK08/Teeth.csv")
+fit=glm(EXTR>0 ~ PDALL + AGE + GENDER, teethData, family=binomial)
+kable(summary(fit)$coef)
+
+```
+
+b)	Provide an interpretation of the association using an exponentiated coefficient estimate from the logistic regression model.
+
+The exponentialted coefficient for PDALL is 4.27.  For every one unit change in PDALL, the exponentiated-odds of at least 1 EXTR increases by 327%, all else held constant.
+
+c)	Estimate the association using Poisson regression. Report the coefficient estimate table.
+
+```{r question3_c, echo = FALSE}
+fit=glm(EXTR>0 ~ PDALL + AGE + GENDER, teethData, family=poisson)
+kable(summary(fit)$coef)
+
+```
+
+d)	Provide an interpretation of the association using an exponentiated coefficient estimate from the Poisson regression model.
+
+The exponentiated coefficient for PDALL is 2.49.  For every one unit change in PDALL, EXTR increases by 141%, all else held constant). 
+
+e)	Compare results from the two models.
+
+Both are significant, but the logistic regression is coming out at 327% compared to 141% for the poisson.  Given that the data is binary and not count data, it seems like the logistic makes more sense. 
+
