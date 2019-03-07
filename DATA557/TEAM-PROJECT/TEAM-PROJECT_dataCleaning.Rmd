@@ -1,0 +1,139 @@
+---
+title: "DATA557 - Team Project"
+author: "Will Wright"
+date: "February 24, 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+########################################################################################################################
+# LOAD LIBRARIES
+########################################################################################################################
+library(dplyr)
+library(lubridate)
+library(tidyr)
+library(ggplot2)
+########################################################################################################################
+# READ DATA
+########################################################################################################################
+setwd("~/UW/DATA557/TEAM-PROJECT/") 
+crimeData_raw <- read.csv("Crime_Data.csv") #514,152 rows
+extraData <- read.csv("seattle_allData_cleaned.csv")
+regionData <- read.csv("neighborhoods_regions.csv")
+```
+
+```{r cleaning, echo = FALSE}
+########################################################################################################################
+# CLEAN DATA
+########################################################################################################################
+
+crimeData <- crimeData_raw
+crimeData$Occurred.Date <- as_date(as.character(crimeData$Occurred.Date), format = "%m/%d/%Y", tz = "UTC")
+crimeData$Reported.Date <- as_date(as.character(crimeData$Reported.Date), format = "%m/%d/%Y", tz = "UTC")
+
+crimeData <- crimeData %>%
+  mutate(reportedYear = year(crimeData$Reported.Date),
+         occurredYear = year(crimeData$Occurred.Date),
+         reportedMonth = month(crimeData$Reported.Date),
+         occurredMonth = month(crimeData$Occurred.Date),
+         occurredHour = floor(Occurred.Time/100),
+         reportedHour = floor(Reported.Time/100))
+
+# set rows with NA values aside and remove
+crimeData_nas <- crimeData[which(is.na(crimeData$Reported.Time)),]
+crimeData <- na.omit(crimeData) #514,150 rows (2 omitted)
+
+# filter to only the decade of 2009 through 2018
+crimeData <- crimeData[which(crimeData$occurredYear>=2009 & crimeData$occurredYear <2019),] #464,023 (50,127 more omitted)
+
+# join on median income data after converting neighborhood in each dataset to character class
+extraData$crimeData_neighborhood <- as.character(extraData$crimeData_neighborhood)
+
+crimeData_incomePop <- crimeData %>%
+  mutate(Neighborhood = as.character(Neighborhood)) %>%
+  left_join(extraData[,2:4], by = c("Neighborhood" = "crimeData_neighborhood")) %>%
+  na.omit() #461,200 rows (omitted 2823 rows with "UNKNOWN" neighborhood)
+
+```
+
+```{r hourlyData, echo = FALSE}
+# convert to wide format
+crimeData_hourTab <- crimeData %>%
+  group_by(occurredYear,occurredMonth,occurredHour) %>%
+  summarize(crimeVolume = n()) %>%
+  spread(occurredHour,crimeVolume)
+
+# rename so columns arent numbers
+for(i in 3:length(names(crimeData_hourTab))){
+  names(crimeData_hourTab)[i] <- paste0("hour_",names(crimeData_hourTab)[i])
+}
+
+# add season
+crimeData_hourTab$occurredSeason <- NA
+crimeData_hourTab$occurredSeason[which(crimeData_hourTab$occurredMonth %in% c(12,1,2))] <- "Winter"
+crimeData_hourTab$occurredSeason[which(crimeData_hourTab$occurredMonth %in% c(3,4,5))] <- "Spring"
+crimeData_hourTab$occurredSeason[which(crimeData_hourTab$occurredMonth %in% c(6,7,8))] <- "Summer"
+crimeData_hourTab$occurredSeason[which(crimeData_hourTab$occurredMonth %in% c(9,10,11))] <- "Fall"
+
+# move season to 2nd column
+crimeData_hourTab <- subset(crimeData_hourTab, select = c(occurredYear, occurredSeason, occurredMonth:26))
+
+# add part of day
+crimeData_hourTab$morning <- rowSums(crimeData_hourTab[,10:15])
+crimeData_hourTab$afternoon <- rowSums(crimeData_hourTab[,16:21])
+crimeData_hourTab$evening <- rowSums(crimeData_hourTab[,22:27])
+crimeData_hourTab$night <- rowSums(crimeData_hourTab[,4:9])
+```
+
+
+```{r neighborhoodData, echo = FALSE}
+# create tab for neighborhood
+crimeData_neighborhoodTab <- crimeData_incomePop %>%
+  group_by(Neighborhood) %>%
+  summarize(medianIncome = first(median_income), population = first(population), crimeVolume = n()) %>%
+  mutate(crimePerCapita = crimeVolume/population)
+
+```
+
+
+```{r, specificCrimeData, echo = FALSE}
+crimeData_specificCrimeTab <- crimeData %>%
+  group_by(Crime.Subcategory, Neighborhood) %>%
+  summarize(crimeVolume = n()) %>%
+  spread(Neighborhood, crimeVolume)
+
+# create vectors of neighborhoods in each region
+region_NE <- regionData$neighborhood[which(regionData$region=="NE")]
+region_NW <- regionData$neighborhood[which(regionData$region=="NW")]
+region_SE <- regionData$neighborhood[which(regionData$region=="SE")]
+region_SW <- regionData$neighborhood[which(regionData$region=="SW")]
+
+# sum by region
+crimeData_specificCrimeTab$region_NE <- rowSums(crimeData_specificCrimeTab[,which(names(crimeData_specificCrimeTab) %in% region_NE)])
+crimeData_specificCrimeTab$region_NW <- rowSums(crimeData_specificCrimeTab[,which(names(crimeData_specificCrimeTab) %in% region_NW)])
+crimeData_specificCrimeTab$region_SE <- rowSums(crimeData_specificCrimeTab[,which(names(crimeData_specificCrimeTab) %in% region_SE)])
+crimeData_specificCrimeTab$region_SW <- rowSums(crimeData_specificCrimeTab[,which(names(crimeData_specificCrimeTab) %in% region_SW)])
+```
+
+```{r bubbleplot}
+bubbleTab_season <- crimeData_hourTab[,c(1:2,28:31)] %>%
+  gather(partOfDay, crimeVolume, -c(occurredYear, occurredSeason)) %>%
+  group_by(occurredSeason,partOfDay) %>%
+  summarize(crimeVolume = sum(crimeVolume))
+
+bubbleTab_hour <- crimeData_hourTab[,c(1,3:27)] %>%
+  group_by(occurredMonth) %>%
+  summarize(hour_0 = sum(hour_0), hour_01 = sum(hour_1),hour_02 = sum(hour_2),hour_03=sum(hour_3),hour_04=sum(hour_4),hour_05=sum(hour_5),hour_06=sum(hour_6),hour_07=sum(hour_7),hour_08=sum(hour_8),hour_09=sum(hour_9),hour_10=sum(hour_10),hour_11=sum(hour_11),hour_12=sum(hour_12),
+           hour_13=sum(hour_13),hour_14=sum(hour_14),hour_15=sum(hour_15),hour_16=sum(hour_16),hour_17=sum(hour_17),hour_18=sum(hour_18),hour_19=sum(hour_19),hour_20=sum(hour_20),hour_21=sum(hour_21),hour_22=sum(hour_22),hour_23=sum(hour_23)) %>%
+  gather(hour, crimeVolume, -occurredMonth)
+
+g <- ggplot(bubbleTab_hour, aes(x = hour, y = occurredMonth, size = crimeVolume, color = crimeVolume))
+g + geom_point() +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+```
+
+
+
+
+
