@@ -1,0 +1,126 @@
+---
+title: "DATA557 - Team Project Q3"
+author: "A rad team :)"
+date: "3/7/2019"
+output: pdf_document
+---
+
+
+```{r setup, include=FALSE}
+########################################################################################################################
+# LOAD LIBRARIES
+########################################################################################################################
+library(dplyr)
+library(lubridate)
+library(tidyr)
+library(ggplot2)
+########################################################################################################################
+# READ DATA
+########################################################################################################################
+crimeData_raw <- read.csv("Crime_Data.csv") #514,152 rows
+regionData <- read.csv("neighborhoods_regions.csv")
+```
+
+```{r cleaning, echo = FALSE}
+########################################################################################################################
+# CLEAN DATA
+########################################################################################################################
+crimeData <- crimeData_raw
+crimeData$Occurred.Date <- as_date(as.character(crimeData$Occurred.Date), format = "%m/%d/%Y", tz = "UTC")
+crimeData <- crimeData %>% mutate(occurredYear = year(crimeData$Occurred.Date))
+
+# set rows with NA values aside and remove
+crimeData_nas <- crimeData[which(is.na(crimeData$Reported.Time)),]
+crimeData <- na.omit(crimeData) #514,150 rows (2 omitted)
+
+# filter to only the decade of 2009 through 2018
+crimeData <- crimeData[which(crimeData$occurredYear>=2009 & crimeData$occurredYear <2019),] #464,023 (50,127 more omitted)
+
+# filter on our five chosen crimes
+interestingCrimes <- c('THEFT-BICYCLE',
+                       
+                       'THEFT-CARPROWL',
+                       
+                       'VEH-THEFT-AUTO',
+                       'VEH-THEFT-MTRCYCLE',
+                       'VEH-THEFT-TRUCK',
+                       'VEH-THEFT-TRAILER',
+                       'VEH-THEFT-RECREATION',
+                       'VEH-THEFT-OTHVEH',
+                       'VEH-THEFT-HVYEQUIP',
+                       'VEH-THEFT-BUS',
+                       
+                       'ROBBERY-STREET-BODYFORCE',
+                       'ROBBERY-STREET-GUN',
+                       'ROBBERY-STREET-WEAPON',
+                       
+                       'BURGLARY-OTHER',
+                       'BURGLARY-FORCE-RES',
+                       'BURGLARY-FORCE-NONRES',
+                       'BURGLARY-NOFORCE-RES',
+                       'BURGLARY-NOFORCE-NONRES',
+                       'BURGLARY-SECURE PARKING-NONRES',
+                       'BURGLARY-SECURE PARKING-RES')
+
+crimeData <- crimeData[which(crimeData$Primary.Offense.Description %in% interestingCrimes),]
+```
+
+
+```{r, specificCrimeData, echo = FALSE}
+crimeData_specificCrimeTab <- crimeData %>%
+  group_by(Primary.Offense.Description, Neighborhood) %>%
+  summarize(crimeVolume = n()) %>%
+  spread(Neighborhood, crimeVolume)
+
+# replace NA with 0 for sums
+crimeData_specificCrimeTab[is.na(crimeData_specificCrimeTab)] <- 0
+
+# create vectors of neighborhoods in each region
+region_NE <- regionData$neighborhood[which(regionData$region=="NE")]
+region_NW <- regionData$neighborhood[which(regionData$region=="NW")]
+region_SE <- regionData$neighborhood[which(regionData$region=="SE")]
+region_SW <- regionData$neighborhood[which(regionData$region=="SW")]
+
+# sum by region
+crimeData_specificCrimeTab$region_NE <- rowSums(crimeData_specificCrimeTab[,which(names(crimeData_specificCrimeTab) %in% region_NE)])
+crimeData_specificCrimeTab$region_NW <- rowSums(crimeData_specificCrimeTab[,which(names(crimeData_specificCrimeTab) %in% region_NW)])
+crimeData_specificCrimeTab$region_SE <- rowSums(crimeData_specificCrimeTab[,which(names(crimeData_specificCrimeTab) %in% region_SE)])
+crimeData_specificCrimeTab$region_SW <- rowSums(crimeData_specificCrimeTab[,which(names(crimeData_specificCrimeTab) %in% region_SW)])
+
+selectFirstWordExceptTheft <- function(offenseName) {
+  offenseNameChar <- as.character(offenseName)
+  splitName <- strsplit(offenseNameChar, '-')
+  if(splitName[[1]][1] != 'THEFT') {
+    return(splitName[[1]][1])
+  } else {
+    return(offenseNameChar)
+  }
+}
+
+# Group by region and sum values
+crimeData_Regions <- crimeData_specificCrimeTab %>% 
+  select(region_NE, region_NW, region_SE, region_SW, Primary.Offense.Description) %>%
+  mutate(offense_group = selectFirstWordExceptTheft(Primary.Offense.Description)) %>%
+  ungroup() %>% 
+  select(-Primary.Offense.Description) %>% 
+  group_by(offense_group) %>% 
+  summarise_all(list(sum = sum))
+
+# Table view
+View(crimeData_Regions)
+
+# Chi square shows that neighborhood and crimes are not independent
+chisq.test(crimeData_Regions[,-1])
+
+toPlot <- crimeData_Regions %>% gather(key=region, value=crime_count, -offense_group)
+
+g <- ggplot(toPlot, aes(x = offense_group, y = region, size = crime_count, color = crime_count))
+g + geom_point() +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+```
+
+
+
+
+
