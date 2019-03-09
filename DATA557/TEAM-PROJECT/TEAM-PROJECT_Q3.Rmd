@@ -110,17 +110,39 @@ crimeData_Regions <- crimeData_specificCrimeTab %>%
 View(crimeData_Regions)
 
 # Chi square shows that neighborhood and crimes are not independent
-chisq.test(crimeData_Regions[,-1])
+chisq.test(crimeData_Regions[,-1]) # No correction for small sample size
+chisq.test(crimeData_Regions[,-1], correct = TRUE) # With correction for small sample size
+chisq.test(crimeData_Regions[,-1], simulate.p.value = TRUE) # With exact p-value
 
-toPlot <- crimeData_Regions %>% gather(key=region, value=crime_count, -offense_group)
+fixRegionName <- function(name) {
+  temp <- strsplit(name, '_')
+  return(temp[[1]][2])
+}
 
-g <- ggplot(toPlot, aes(x = offense_group, y = region, size = crime_count, color = crime_count))
-g + geom_point() +
+toPlot <- crimeData_Regions %>% 
+          gather(key=region, value=crime_count, -offense_group) %>% 
+          select(Region=region, Offense=offense_group, crime_count) %>%
+          rowwise() %>% mutate(Region = fixRegionName(Region))
+
+g <- ggplot(toPlot, aes(x = Offense, y = Region, size = crime_count, color = crime_count))
+g + 
+  geom_point() +
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+  theme(axis.text.x = element_text(angle = 15, hjust = 1)) +
+  ggtitle('Crime frequency by region and offense') +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
+Seattle region vs. crime types
 
+The crime data contained information about the different neighborhoods. We mapped the neighborhoods manually into four regions according to the following map.
 
+Explain difference between Prowl, theft, robbery and burglary
 
+We selected crimes that we believe were likely to affect us.
 
+We used a chi-square test of independence to compare the frequency of crims in the different regions over the past 10 years. The two assumptions, namely that each value can only are independent and contribute to one cell and one cell only and the large sample size for normality were met. with a total sample size of 500K+ and no less than 450 in each cell.
+
+We obtained a p-value << 0.001 for both the standard version and the exact versions of the test.
+
+From the frequency table above, we see that these 5 crime types seem more likely to occur in northern vs southern areas and in a lesser manner in western vs eastern areas. Also car prowl seems more likely to occur particularly in the north west. We have not conducted additional t-test to assess the significance of these observations.
