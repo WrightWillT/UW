@@ -1,0 +1,95 @@
+---
+title: "Final Project Q2"
+author: "Tara Wilson"
+date: "March 3, 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(sandwich)
+```
+
+```{r, echo=FALSE}
+data <- read.csv(file = 'q2.csv', header = TRUE, sep = ",")
+
+crimeData <- read.csv(file = 'crimes.csv', header = TRUE, sep = ",")
+crimeData <- crimeData[complete.cases(crimeData),]
+crimeData <- crimeData[as.numeric(format(as.Date(crimeData$Occurred.Date, "%m/%d/%Y"), "%Y")) == 2016,]
+```
+
+# Linear regression
+
+```{r, echo=F}
+neighborhoodCounts <- as.data.frame(table(crimeData$Neighborhood))
+
+totData <- merge(x = data, y = neighborhoodCounts, by.x = "crimeData_neighborhood", by.y="Var1")
+
+ratioMale <- (totData$male_count_data/totData$female_count_data)
+
+lmModel <- lm(Freq ~ median_income + population + ratioMale + male_age_data + female_age_data, data=totData)
+summary(lmModel)
+```
+
+```{r, echo=F}
+modelCoefs <- summary(lmModel)$coef
+
+allCoefs <- cbind(modelCoefs,robust.se=sqrt(diag(vcovHC(lmModel))))
+allCoefs <- cbind(allCoefs, robust.z=(allCoefs[,1]/allCoefs[,5]))
+
+Ztest <- function (zVal) {
+ return (2*(1-pt(abs(zVal), 55)))
+}
+
+allCoefs <- cbind(allCoefs, robust.p=sapply(allCoefs[, 6],FUN=Ztest))
+allCoefs
+```
+
+```{r, echo=F}
+library(pwr)
+pwr.f2.test(u=5, v=52, f2 = (.5367/(1-0.5367)), sig.level = 0.05, power = NULL)
+```
+
+# LM Assumptions
+
+```{r, echo=F}
+par(mfrow=c(1,2), mar=c(5,4,4,1))
+plot(lmModel)
+```
+
+```{r, echo=F}
+qqnorm(totData$Freq)
+qqline(totData$Freq, col="purple", lwd=2)
+```
+
+```{r, echo=F}
+hist(totData$Freq, density=20, breaks=15, prob=TRUE, main="", xlab="")
+curve(dnorm(x, mean(totData$Freq), sd(totData$Freq)), col="purple", lwd=2, add=TRUE)
+```
+
+
+
+
+
+# Pois
+
+```{r, echo=F}
+
+
+poisModel <- glm(Freq ~ median_income + population + ratioMale + male_age_data + female_age_data, data=totData, family=poisson)
+summary(poisModel)
+
+modelCoefs <- summary(poisModel)$coef
+
+allCoefs <- cbind(modelCoefs,robust.se=sqrt(diag(vcovHC(poisModel))))
+allCoefs <- cbind(allCoefs, robust.z=(allCoefs[,1]/allCoefs[,5]))
+
+Ztest <- function (zVal) {
+ return (2*(1-pt(abs(zVal), 55)))
+}
+
+allCoefs <- cbind(allCoefs, robust.p=sapply(allCoefs[, 6],FUN=Ztest))
+allCoefs
+```
+
+
