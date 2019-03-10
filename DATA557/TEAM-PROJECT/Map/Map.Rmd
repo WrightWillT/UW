@@ -1,0 +1,39 @@
+---
+title: "Map"
+author: "Tara Wilson"
+date: "March 6, 2019"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggmap)
+library(leaflet)
+```
+
+```{r, echo=F}
+
+ggmap::register_google(key = "")
+
+seattle <- ggmap::geocode("Seattle")
+leaflet(seattle) %>% 
+  addTiles() %>% 
+  addMarkers() %>% 
+  setView(lng = -122.335167, lat = 47.608013, zoom = 10.5) %>% addPolylines(seattle, lat = as.numeric(c(47.5899, 47.5899)), lng = as.numeric(c(-122.37, -122.27)), color="black", opacity=1) %>% 
+  addPolylines(seattle, lat = as.numeric(c(47.733498, 47.718333)), lng = as.numeric(c(-122.325500, -122.323769)), color="black", opacity=1) %>% 
+  addPolylines(seattle, lat = as.numeric(c(47.718333, 47.710479)), lng = as.numeric(c(-122.323769, -122.329952)), color="black", opacity=1) %>% 
+  addPolylines(seattle, lat = as.numeric(c(47.710479, 47.688759)), lng = as.numeric(c(-122.329952, -122.329265)), color="black", opacity=1) %>% 
+  addPolylines(seattle, lat = as.numeric(c(47.688759, 47.680207)), lng = as.numeric(c(-122.329265, -122.320334)), color="black", opacity=1) %>% 
+  addPolylines(seattle, lat = as.numeric(c(47.680207, 47.635217)), lng = as.numeric(c(-122.320334, -122.323000)), color="black", opacity=1) %>% 
+  addPolylines(seattle, lat = as.numeric(c(47.635217, 47.627698)), lng = as.numeric(c(-122.323, -122.327981)), color="black", opacity=1) %>% 
+  addPolylines(seattle, lat = as.numeric(c(47.627698, 47.609647)), lng = as.numeric(c(-122.327981, -122.331588)), color="black", opacity=1) %>% 
+  addPolylines(seattle, lat = as.numeric(c(47.609647, 47.597957)), lng = as.numeric(c(-122.331588, -122.320768)), color="black", opacity=1) %>% 
+  addPolylines(seattle, lat = as.numeric(c(47.597957, 47.559859)), lng = as.numeric(c(-122.320768, -122.321397)), color="black", opacity=1) %>% 
+  addPolylines(seattle, lat = as.numeric(c(47.559859, 47.535218)), lng = as.numeric(c(-122.321397, -122.296207)), color="black", opacity=1) %>% 
+  addPolylines(seattle, lat = as.numeric(c(47.535218, 47.490386)), lng = as.numeric(c(-122.296207, -122.263688)), color="black", opacity=1) %>% addProviderTiles(providers$CartoDB.Positron) %>% addLabelOnlyMarkers(-122.361908, 47.61, label = "NW", labelOptions=labelOptions(noHide = T, direction = 'top', textOnly = T, textsize = "32px")) %>% 
+  addLabelOnlyMarkers(-122.292175, 47.61, label = "NE", labelOptions=labelOptions(noHide = T, direction = 'top', textOnly = T, textsize = "32px")) %>% 
+  addLabelOnlyMarkers(-122.361908, 47.54, label = "SW", labelOptions=labelOptions(noHide = T, direction = 'top', textOnly = T, textsize = "32px")) %>% 
+  addLabelOnlyMarkers(-122.292175, 47.54, label = "SE", labelOptions=labelOptions(noHide = T, direction = 'top', textOnly = T, textsize = "32px"))
+```
