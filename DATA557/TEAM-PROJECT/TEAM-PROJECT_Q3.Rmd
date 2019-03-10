@@ -121,15 +121,15 @@ fixRegionName <- function(name) {
 
 toPlot <- crimeData_Regions %>% 
           gather(key=region, value=crime_count, -offense_group) %>% 
-          select(Region=region, Offense=offense_group, crime_count) %>%
+          select(Region=region, Crime_type=offense_group, crime_count) %>%
           rowwise() %>% mutate(Region = fixRegionName(Region))
 
-g <- ggplot(toPlot, aes(x = Offense, y = Region, size = crime_count, color = crime_count))
+g <- ggplot(toPlot, aes(x = Crime_type, y = Region, size = crime_count, color = crime_count))
 g + 
   geom_point() +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 15, hjust = 1)) +
-  ggtitle('Crime frequency by region and offense') +
+  ggtitle('Crime frequency by region and crime type') +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
