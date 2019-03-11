@@ -115,7 +115,7 @@ crimeData_specificCrimeTab$region_SE <- rowSums(crimeData_specificCrimeTab[,whic
 crimeData_specificCrimeTab$region_SW <- rowSums(crimeData_specificCrimeTab[,which(names(crimeData_specificCrimeTab) %in% region_SW)])
 ```
 
-```{r bubbleplot}
+```{r q1_bubbleplot}
 bubbleTab_season <- crimeData_hourTab[,c(1:2,28:31)] %>%
   gather(partOfDay, crimeVolume, -c(occurredYear, occurredSeason)) %>%
   group_by(occurredSeason,partOfDay) %>%
@@ -133,7 +133,7 @@ g + geom_point() +
              color = "black", pch = 21, alpha = 0.2) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-  labs(title= "Crime Volume by Hour of Day and Month",
+  labs(title= "Crime volume by hour of day and month",
        x = "Hour",
        y = "Month") +
   scale_y_continuous(breaks = seq(1,12,by = 1)) +
@@ -142,8 +142,158 @@ g + geom_point() +
   scale_x_discrete(labels = c("00:00", "1:00", "2:00", "3:00", "4:00", "5:00", "6:00", "7:00", "8:00", "9:00", "10:00",
                               "11:00", "12:00","13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00",
                               "21:00", "22:00", "23:00")) +
-  scale_size(range = c(2,12))
+  scale_size(range = c(2,10)) +
+  theme(plot.title = element_text(hjust = 0.5), text = element_text(size=20))
   
+```
+
+
+```{r q1_monthlyCrimeVolume}
+crimeData_monthTab <- crimeData %>%
+  group_by(occurredMonth) %>%
+  summarize(crimeVolume = n())
+
+g <- ggplot(crimeData_monthTab, aes(x = occurredMonth, y = crimeVolume/1000))
+g +   geom_smooth(method = lm, linetype = "dashed") +
+  geom_line(size = 1.5) +
+  scale_y_continuous(limits = c(0,60), breaks = seq(0,60,by = 10)) +
+  labs(title = "Average crime volume by month",
+       x = "Month", 
+       y = "Crime volume (000s)") +
+  theme_bw() +
+  scale_x_continuous(breaks = seq(1,12,by = 1)) +
+   theme(plot.title = element_text(hjust = 0.5), text = element_text(size=20)) 
+
+```
+
+```{r q1_hourlyLinePlot}
+g <- ggplot(bubbleTab_hour, aes(x = hour, y = crimeVolume, color = factor(occurredMonth), group = factor(occurredMonth)))
+g + geom_line() +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(title= "Crime volume by hour of day and month",
+       x = "Hour",
+       y = "Crime volume") +
+  scale_x_discrete(labels = c("00:00", "1:00", "2:00", "3:00", "4:00", "5:00", "6:00", "7:00", "8:00", "9:00", "10:00",
+                              "11:00", "12:00","13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00",
+                              "21:00", "22:00", "23:00")) +
+  theme(plot.title = element_text(hjust = 0.5), text = element_text(size=20)) +
+  scale_y_continuous(breaks = seq(0,3000,by = 500)) +
+  guides(color = guide_legend(title = "Month")) +
+  scale_color_discrete(labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))
+```
+
+```{r q1_residualsPlots}
+# part of day
+crimeData_dayPartTab <- crimeData 
+crimeData_dayPartTab$partOfDay <- NA
+crimeData_dayPartTab$partOfDay[which(crimeData$occurredHour>=6 & crimeData$occurredHour<=11)] <- "Morning"
+crimeData_dayPartTab$partOfDay[which(crimeData$occurredHour>=12 & crimeData$occurredHour<=17)] <- "Afternoon"
+crimeData_dayPartTab$partOfDay[which(crimeData$occurredHour>=18 & crimeData$occurredHour<=23)] <- "Evening"
+crimeData_dayPartTab$partOfDay[which(crimeData$occurredHour>=0 & crimeData$occurredHour<=6)] <- "Night"
+  
+crimeData_dayPartTab <- crimeData_dayPartTab %>%
+  group_by(Occurred.Date, partOfDay) %>%
+  summarize(crimeVolume = n())
+
+# subtract the means by group
+morningMean <- mean(crimeData_dayPartTab$crimeVolume[which(crimeData_dayPartTab$partOfDay=="Morning")])
+afternoonMean <- mean(crimeData_dayPartTab$crimeVolume[which(crimeData_dayPartTab$partOfDay=="Afternoon")])
+eveningMean <- mean(crimeData_dayPartTab$crimeVolume[which(crimeData_dayPartTab$partOfDay=="Evening")])
+nightMean <- mean(crimeData_dayPartTab$crimeVolume[which(crimeData_dayPartTab$partOfDay=="Night")])
+
+crimeData_dayPartTab$crimeVolume[which(crimeData_dayPartTab$partOfDay=="Morning")] <- crimeData_dayPartTab$crimeVolume[which(crimeData_dayPartTab$partOfDay=="Morning")] - morningMean
+crimeData_dayPartTab$crimeVolume[which(crimeData_dayPartTab$partOfDay=="Afternoon")] <- crimeData_dayPartTab$crimeVolume[which(crimeData_dayPartTab$partOfDay=="Afternoon")] - afternoonMean
+crimeData_dayPartTab$crimeVolume[which(crimeData_dayPartTab$partOfDay=="Evening")] <- crimeData_dayPartTab$crimeVolume[which(crimeData_dayPartTab$partOfDay=="Evening")] - eveningMean
+crimeData_dayPartTab$crimeVolume[which(crimeData_dayPartTab$partOfDay=="Night")] <- crimeData_dayPartTab$crimeVolume[which(crimeData_dayPartTab$partOfDay=="Night")] - nightMean
+
+g <- ggplot(crimeData_dayPartTab, aes(x = partOfDay, y = crimeVolume, fill = partOfDay))
+g + geom_boxplot(alpha = 0.5) +
+  theme_bw() +
+  labs(title = "Residual boxplots of crime volume by part of day",
+       x = "Part of day", 
+       y = "Crime volume") +
+  theme(legend.position = "none") +
+  theme(plot.title = element_text(hjust = 0.5), text = element_text(size=20))
+
+# Season
+crimeData_seasonTab <- crimeData
+crimeData_seasonTab$season <- NA
+crimeData_seasonTab$season[which(crimeData_seasonTab$occurredMonth %in% c(12,1,2))] <- "Winter"
+crimeData_seasonTab$season[which(crimeData_seasonTab$occurredMonth %in% c(3,4,5))] <- "Spring"
+crimeData_seasonTab$season[which(crimeData_seasonTab$occurredMonth %in% c(6,7,8))] <- "Fall"
+crimeData_seasonTab$season[which(crimeData_seasonTab$occurredMonth %in% c(9,10,11))] <- "Summer"
+
+crimeData_seasonTab <- crimeData_seasonTab %>%
+  group_by(occurredYear, season) %>%
+  summarize(crimeVolume = n())
+
+winterMean <- mean(crimeData_seasonTab$crimeVolume[which(crimeData_seasonTab$season=="Winter")])
+springMean <- mean(crimeData_seasonTab$crimeVolume[which(crimeData_seasonTab$season=="Spring")])
+summerMean <- mean(crimeData_seasonTab$crimeVolume[which(crimeData_seasonTab$season=="Summer")])
+fallMean <- mean(crimeData_seasonTab$crimeVolume[which(crimeData_seasonTab$season=="Fall")])
+
+crimeData_seasonTab$crimeVolume[which(crimeData_seasonTab$season=="Winter")] <- crimeData_seasonTab$crimeVolume[which(crimeData_seasonTab$season=="Winter")] - winterMean
+crimeData_seasonTab$crimeVolume[which(crimeData_seasonTab$season=="Spring")] <- crimeData_seasonTab$crimeVolume[which(crimeData_seasonTab$season=="Spring")] - springMean
+crimeData_seasonTab$crimeVolume[which(crimeData_seasonTab$season=="Summer")] <- crimeData_seasonTab$crimeVolume[which(crimeData_seasonTab$season=="Summer")] - summerMean
+crimeData_seasonTab$crimeVolume[which(crimeData_seasonTab$season=="Fall")] <- crimeData_seasonTab$crimeVolume[which(crimeData_seasonTab$season=="Fall")] - fallMean
+
+g <- ggplot(crimeData_seasonTab, aes(x = season, y = crimeVolume, fill = season))
+g + geom_boxplot(alpha = 0.5) +
+  theme_bw() +
+  labs(title = "Residual boxplots of crime volume by season",
+       x = "Season", 
+       y = "Crime volume") +
+  theme(legend.position = "none") +
+  theme(plot.title = element_text(hjust = 0.5), text = element_text(size=20))
+
+# Month
+crimeData_monthTab <- crimeData_hourTab[,c(1, 3:27)] 
+crimeData_monthTab$crimeVolume <- rowSums(crimeData_monthTab[,3:26]) 
+crimeData_monthTab <- crimeData_monthTab[,c(1,2,27)]
+
+# learned a fancy new trick using aggregate
+monthAgg <- aggregate(crimeData_monthTab$crimeVolume, list(crimeData_monthTab$occurredMonth), FUN = mean)
+# ugly loop because I don't want to bust out data.table
+for(i in 1:nrow(crimeData_monthTab)){
+  crimeData_monthTab$crimeVolume[i] <- crimeData_monthTab$crimeVolume[i] -
+    monthAgg$x[which(monthAgg$Group.1==crimeData_monthTab$occurredMonth[i])]
+}
+
+g <- ggplot(crimeData_monthTab, aes(x = factor(occurredMonth), y = crimeVolume, fill = factor(occurredMonth)))
+g + geom_boxplot(alpha = 0.5) +
+  theme_bw() +
+  labs(title = "Residual boxplots of crime volume by month",
+       x = "Month", 
+       y = "Crime volume") +
+  theme(legend.position = "none") +
+  theme(plot.title = element_text(hjust = 0.5), text = element_text(size=20)) +
+  scale_fill_discrete(labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))
+
+
+# Hour
+crimeData_hourResTab <- crimeData %>%
+  group_by(Occurred.Date,occurredHour) %>%
+  summarize(crimeVolume = n())
+hourAgg <- aggregate(crimeData_hourResTab$crimeVolume, list(crimeData_hourResTab$occurredHour), FUN = mean)
+
+for(i in 1:nrow(crimeData_hourResTab)){
+  crimeData_hourResTab$crimeVolume[i] <- crimeData_hourResTab$crimeVolume[i] -
+    hourAgg$x[which(hourAgg$Group.1==crimeData_hourResTab$occurredHour[i])]
+}
+
+
+g <- ggplot(crimeData_hourResTab, aes(x = factor(occurredHour), y = crimeVolume, fill = factor(occurredHour)))
+g + geom_boxplot(alpha = 0.5) +
+  theme_bw() +
+  labs(title = "Residual boxplots of crime volume by hour",
+       x = "Hour", 
+       y = "Crime volume") +
+  theme(legend.position = "none") +
+  theme(plot.title = element_text(hjust = 0.5), text = element_text(size=20)) 
+
+
+
 ```
 
 
