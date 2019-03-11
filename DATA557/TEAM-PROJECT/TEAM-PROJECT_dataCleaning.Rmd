@@ -310,7 +310,7 @@ summary(fit)
 
 a <- ggplot(crimeData_neighborhoodTab, aes(x = median_income, y = crimeVolume)) +
   geom_smooth(method = "lm", linetype = "dashed") +
-  geom_point() +
+  geom_point(alpha = 0.6) +
   theme_bw() +
   labs(x = "Median Income",
        y = "Crime Volume") +
@@ -318,7 +318,7 @@ a <- ggplot(crimeData_neighborhoodTab, aes(x = median_income, y = crimeVolume)) 
 
 b <- ggplot(crimeData_neighborhoodTab, aes(x = population, y = crimeVolume)) +
   geom_smooth(method = "lm", linetype = "dashed") +
-  geom_point() +
+  geom_point(alpha = 0.6) +
   theme_bw() +
   labs(x = "Neighborhood Population",
        y = "Crime Volume")+
@@ -326,7 +326,7 @@ b <- ggplot(crimeData_neighborhoodTab, aes(x = population, y = crimeVolume)) +
 
 c <- ggplot(crimeData_neighborhoodTab, aes(x = ratioMale, y = crimeVolume)) +
   geom_smooth(method = "lm", linetype = "dashed") +
-  geom_point() +
+  geom_point(alpha = 0.6) +
   theme_bw() +
   labs(x = "Ratio Male",
        y = "Crime Volume")+
@@ -334,7 +334,7 @@ c <- ggplot(crimeData_neighborhoodTab, aes(x = ratioMale, y = crimeVolume)) +
 
 d <- ggplot(crimeData_neighborhoodTab, aes(x = male_age_data, y = crimeVolume)) +
   geom_smooth(method = "lm", linetype = "dashed") +
-  geom_point() +
+  geom_point(alpha = 0.6) +
   theme_bw() +
   labs(x = "Male Age",
        y = "Crime Volume")+
@@ -342,7 +342,7 @@ d <- ggplot(crimeData_neighborhoodTab, aes(x = male_age_data, y = crimeVolume)) 
 
 e <- ggplot(crimeData_neighborhoodTab, aes(x = female_age_data, y = crimeVolume)) +
   geom_smooth(method = "lm", linetype = "dashed") +
-  geom_point() +
+  geom_point(alpha = 0.6) +
   theme_bw() +
   labs(x = "Female Age",
        y = "Crime Volume")+
