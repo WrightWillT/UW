@@ -306,49 +306,53 @@ crimeData_neighborhoodTab <- crimeData %>%
   na.omit()
 
 fit <- lm(crimeVolume ~ median_income + population + ratioMale + male_age_data + female_age_data, data=crimeData_neighborhoodTab)
-summary(fit)
+round(summary(fit)$coef,6)
 
 a <- ggplot(crimeData_neighborhoodTab, aes(x = median_income, y = crimeVolume)) +
   geom_smooth(method = "lm", linetype = "dashed") +
   geom_point(alpha = 0.6) +
   theme_bw() +
-  labs(x = "Median Income",
-       y = "Crime Volume") +
+  labs(x = "Median income",
+       y = "Crime count") +
   theme(plot.title = element_text(hjust = 0.5), text = element_text(size=14)) 
 
 b <- ggplot(crimeData_neighborhoodTab, aes(x = population, y = crimeVolume)) +
   geom_smooth(method = "lm", linetype = "dashed") +
   geom_point(alpha = 0.6) +
   theme_bw() +
-  labs(x = "Neighborhood Population",
-       y = "Crime Volume")+
+  labs(x = "Neighborhood population",
+       y = "Crime count")+
   theme(plot.title = element_text(hjust = 0.5), text = element_text(size=14))
 
 c <- ggplot(crimeData_neighborhoodTab, aes(x = ratioMale, y = crimeVolume)) +
   geom_smooth(method = "lm", linetype = "dashed") +
   geom_point(alpha = 0.6) +
   theme_bw() +
-  labs(x = "Ratio Male",
-       y = "Crime Volume")+
+  labs(x = "Ratio of male:female",
+       y = "Crime count")+
   theme(plot.title = element_text(hjust = 0.5), text = element_text(size=14))
 
 d <- ggplot(crimeData_neighborhoodTab, aes(x = male_age_data, y = crimeVolume)) +
   geom_smooth(method = "lm", linetype = "dashed") +
   geom_point(alpha = 0.6) +
   theme_bw() +
-  labs(x = "Male Age",
-       y = "Crime Volume")+
+  labs(x = "Average male age",
+       y = "Crime count")+
   theme(plot.title = element_text(hjust = 0.5), text = element_text(size=14))
 
 e <- ggplot(crimeData_neighborhoodTab, aes(x = female_age_data, y = crimeVolume)) +
   geom_smooth(method = "lm", linetype = "dashed") +
   geom_point(alpha = 0.6) +
   theme_bw() +
-  labs(x = "Female Age",
-       y = "Crime Volume")+
+  labs(x = "Average female age",
+       y = "Crime count")+
   theme(plot.title = element_text(hjust = 0.5), text = element_text(size=14))
 
 grid.arrange(a,b,c,d,e, ncol = 3)
+
+
+
+
 
 ```
 
