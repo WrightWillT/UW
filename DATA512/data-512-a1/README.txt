@@ -11,3 +11,10 @@ Within the 'data_clean' folder, there is a single file containing the cleaned an
 Details regarding the transformations between the raw and clean data can be found within the 'src' folder's 'hcds-a1-data-curation.ipnyb' Jupiter notebook.  This file also produces the single .png file in the 'results' folder, which is a chart of pageviews for the English Wikipedia over time.
 
 The API connection code was largely borrowed from 'http://paws-public.wmflabs.org/paws-public/User:Jtmorgan/data512_a1_example.ipynb'. 
+
+Links to API documentation, including terms of use:
+T&C: https://www.mediawiki.org/wiki/REST_API#Terms_and_conditions
+Pageview API: https://wikitech.wikimedia.org/wiki/Analytics/AQS/Pageviews
+Legacy Pagecount API: https://wikitech.wikimedia.org/wiki/Analytics/AQS/Legacy_Pagecounts
+Endpoints: https://wikimedia.org/api/rest_v1/#/Pageviews%20data/get_metrics_pageviews_aggregate__project___access___agent___granularity___start___end_
+
