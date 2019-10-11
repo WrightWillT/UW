@@ -1,0 +1,69 @@
+---
+title: "Analyzing Aggressiveness in Comment Data"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+
+```{r}
+
+setwd("~/UW/DATA512/week3_inClass/")
+agg_comments <- read.table("aggression_annotated_comments.tsv", sep = '\t', header = TRUE, quote = "", fill = TRUE)
+agg_annotations <- read.table("aggression_annotations.tsv", sep = '\t', header = TRUE)
+agg_worker_demos <- read.table("aggression_worker_demographics.tsv", sep = '\t', header = TRUE)
+
+```
+
+```{r}
+# join the comments data with the annotations, then get mean and variance for each comment across annotators 
+agg_comments_annotated <- agg_comments %>%
+  left_join(agg_annotations, by = c("rev_id" = "rev_id")) %>%
+  group_by(rev_id) %>%
+  summarize(aggression_score_mean = mean(aggression_score),
+            aggression_score_var = var(aggression_score)) %>%
+  arrange(desc(aggression_score_mean)) %>%
+  left_join(agg_comments, by = c("rev_id" = "rev_id"))
+
+```
+
+The most non-aggresive comments:
+```{r}
+print(head(agg_comments_annotated))
+```
+
+The most aggressive comments:
+```{r}
+print(tail(agg_comments_annotated))
+```
+
+
+Plotting out how sure annotators are about their scores (as measured by variance and mean scores):
+```{r}
+g <- ggplot(agg_comments_annotated, aes(x = aggression_score_mean, y = aggression_score_var))
+g + geom_point(alpha = 0.1) +
+  theme_bw() +
+  geom_smooth(col = 'red') + 
+  labs(title = "How Sure Annotators Are As Measured by \nthe Mean and Variance of Ratings",
+       x = "Mean Level of Aggressiveness (-3 to 3)",
+       y = "Variance in Annotators' Scores\n(how sure they are)")
+```
+
+```{r}
+
+```
+
+
+```{r}
+# should use an apply, but that means thinking harder
+agg_comments_annotated$fbombs <- NA
+for(i in 1:nrow(agg_comments_annotated)){
+  agg_comments_annotated$fbombs[i] <- str_count(tolower(agg_comments_annotated$comment[i]), ".*fuck.*")
+}
+```
+
+
+
+
+
