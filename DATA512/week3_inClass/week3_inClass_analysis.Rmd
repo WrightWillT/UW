@@ -50,20 +50,26 @@ g + geom_point(alpha = 0.1) +
        y = "Variance in Annotators' Scores\n(how sure they are)")
 ```
 
-```{r}
 
-```
 
 
 ```{r}
 # should use an apply, but that means thinking harder
 agg_comments_annotated$fbombs <- NA
 for(i in 1:nrow(agg_comments_annotated)){
-  agg_comments_annotated$fbombs[i] <- str_count(tolower(agg_comments_annotated$comment[i]), ".*fuck.*")
+  agg_comments_annotated$fbombs[i] <- str_count(tolower(agg_comments_annotated$comment[i]), "fuck")
 }
 ```
 
-
+```{r}
+g <- ggplot(agg_comments_annotated, aes (x = aggression_score_mean, y = fbombs))
+g + geom_point(alpha = 0.1) +
+  geom_smooth(col = 'red') +
+  theme_bw() +
+  labs(title = "Aggressiveness Score by Presence of F-bomb(s)",
+       x = "Mean Level of Aggressiveness (-3 to 3)",
+       y = "F-bomb in Comment or Not")
+```
 
 
 
