@@ -1,4 +1,4 @@
-country,article_count,population,article_coverage,high_quality_count,high_quality_pct
+country,article_count,population_millions,article_coverage,high_quality_count,high_quality_pct
 India,980,1371.3,0.7146503318019398,17,0.017346938775510204
 Indonesia,210,265.2,0.7918552036199096,10,0.047619047619047616
 China,1130,1393.8,0.8107332472377673,41,0.036283185840707964

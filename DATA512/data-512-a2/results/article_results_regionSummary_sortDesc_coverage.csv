@@ -1,4 +1,4 @@
-region,article_count,population,high_quality_count,article_coverage,high_quality_pct
+region,article_count,population_millions,high_quality_count,article_coverage,high_quality_pct
 OCEANIA,3128,41,66,76.29268292682927,0.021099744245524295
 EUROPE,15864,746,322,21.265415549597854,0.020297528996469996
 LATIN AMERICA AND THE CARIBBEAN,5169,649,69,7.964560862865947,0.013348810214741729

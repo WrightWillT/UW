@@ -1,4 +1,4 @@
-region,article_count,population,high_quality_count,article_coverage,high_quality_pct
+region,article_count,population_millions,high_quality_count,article_coverage,high_quality_pct
 NORTHERN AMERICA,1921,365,99,5.263013698630137,0.05153565851119209
 ASIA,11531,4536,310,2.5421075837742504,0.026884051686757438
 OCEANIA,3128,41,66,76.29268292682927,0.021099744245524295

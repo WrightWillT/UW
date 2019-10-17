@@ -1,4 +1,4 @@
-country,article_count,population,article_coverage,high_quality_count,high_quality_pct
+country,article_count,population_millions,article_coverage,high_quality_count,high_quality_pct
 Angola,106,30.4,3.486842105263158,0,0.0
 Sao Tome and Principe,21,0.2,105.0,0,0.0
 Finland,569,5.5,103.45454545454545,0,0.0

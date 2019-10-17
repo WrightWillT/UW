@@ -1,4 +1,4 @@
-country,article_count,population,article_coverage,high_quality_count,high_quality_pct
+country,article_count,population_millions,article_coverage,high_quality_count,high_quality_pct
 "Korea, North",36,25.6,1.40625,7,0.19444444444444445
 Saudi Arabia,118,33.4,3.532934131736527,15,0.1271186440677966
 Mauritania,48,4.5,10.666666666666666,6,0.125

@@ -1,4 +1,4 @@
-country,article_count,population,article_coverage,high_quality_count,high_quality_pct
+country,article_count,population_millions,article_coverage,high_quality_count,high_quality_pct
 Tuvalu,54,0.01,5400.0,5,0.09259259259259259
 Nauru,52,0.01,5200.0,0,0.0
 San Marino,81,0.03,2700.0,0,0.0
